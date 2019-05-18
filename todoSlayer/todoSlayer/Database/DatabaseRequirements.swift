@@ -22,7 +22,7 @@ protocol TodoItemListViewDbAPI: class {
 }
 
 protocol TodoItemListViewDbDelegate: class {
-    func todoItemListViewDbDelegate(todoItems: [TodoItem])
-    func todoItemListViewDbDelegate(newTodoItem: TodoItem)
-    func todoItemListViewDbDelegate(deletedTodoItem: TodoItem)
+    func todoItemListViewDbDelegate(allTodoItems: [TodoItem])
+    func todoItemListViewDbDelegate(didAddTodoItem newTodoItem: TodoItem)
+    func todoItemListViewDbDelegate(didDeleteTodoItem deletedTodoItem: TodoItem)
 }

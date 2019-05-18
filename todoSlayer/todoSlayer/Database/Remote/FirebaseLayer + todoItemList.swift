@@ -27,7 +27,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                 let todoItems = snapshot.documents.compactMap({ (document) in
                     return TodoItem(json: document.data())
                 })
-                self.todoItemListViewDelegate?.todoItemListViewDbDelegate(todoItems: todoItems)
+                self.todoItemListViewDelegate?.todoItemListViewDbDelegate(allTodoItems: todoItems)
                 isInitialFetch = false
                 return
             }
@@ -35,11 +35,11 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
             snapshot.documentChanges.forEach{ (change)  in
                 guard let todoItem = TodoItem(json: change.document.data()) else { return }
                 if change.type == .added {
-                    self.todoItemListViewDelegate?.todoItemListViewDbDelegate(newTodoItem: todoItem)
+                    self.todoItemListViewDelegate?.todoItemListViewDbDelegate(didAddTodoItem: todoItem)
                 }
                 
                 if change.type == .removed {
-                    self.todoItemListViewDelegate?.todoItemListViewDbDelegate(deletedTodoItem: todoItem)
+                    self.todoItemListViewDelegate?.todoItemListViewDbDelegate(didDeleteTodoItem: todoItem)
                 }
             }
         }

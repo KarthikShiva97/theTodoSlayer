@@ -71,7 +71,15 @@ extension TodoListViewModel {
 
 extension TodoListViewModel: TodoItemListViewDbDelegate {
     
-    func todoItemListViewDbDelegate(deletedTodoItem: TodoItem) {
+    func todoItemListViewDbDelegate(didAddTodoItem newTodoItem: TodoItem) {
+        self.todoItems.append(newTodoItem)
+        let indexPathToInsert = IndexPath(item: todoItems.count - 1, section: 0)
+        let indexPathToScroll = IndexPath(item: todoItems.count - 2, section: 0)
+        delegate.appendItem(newTodoItem, atIndexPath: indexPathToInsert)
+        delegate.scrollToItem(atIndexPath: indexPathToScroll)
+    }
+    
+    func todoItemListViewDbDelegate(didDeleteTodoItem deletedTodoItem: TodoItem) {
         for (index, todoItem) in todoItems.enumerated() {
             if todoItem.ID == deletedTodoItem.ID {
                 todoItems.remove(at: index)
@@ -80,16 +88,9 @@ extension TodoListViewModel: TodoItemListViewDbDelegate {
         }
     }
     
-    func todoItemListViewDbDelegate(newTodoItem: TodoItem) {
-        self.todoItems.append(newTodoItem)
-        let indexPathToInsert = IndexPath(item: todoItems.count - 1, section: 0)
-        let indexPathToScroll = IndexPath(item: todoItems.count - 2, section: 0)
-        delegate.appendItem(newTodoItem, atIndexPath: indexPathToInsert)
-        delegate.scrollToItem(atIndexPath: indexPathToScroll)
-    }
-    
-    func todoItemListViewDbDelegate(todoItems allTodoItems: [TodoItem]) {
+    func todoItemListViewDbDelegate(allTodoItems: [TodoItem]) {
         self.todoItems = allTodoItems
         delegate.reloadAllItems()
     }
+    
 }
