@@ -9,26 +9,34 @@
 
 import Foundation
 import RealmSwift
+import Firebase
+import FirebaseFirestore
 
 enum TaskEntryFailure {
     case taskNameMissing
 }
 
+enum Operation {
+    case add
+    case delete
+    case update
+}
+
 protocol TodoEntryViewModelDelegate: class {
     func handleFailure(_ failure: TaskEntryFailure)
-    func didAddTask()
+    func didCompleteOperation(_ operation: Operation)
 }
 
 class TodoEntryViewModel {
     
     weak var delegate: TodoEntryViewModelDelegate!
     
-    private let database: TodoItemEntryDbAPI = {
-        return RealmLayer()
+    private let remoteDatabase: TodoItemDetailViewDbAPI = {
+        return FirebaseLayer()
     }()
     
     var taskName: String?
-    var taskNotes = String()
+    var taskNotes: String = ""
     
     init(delegate: TodoEntryViewModelDelegate) {
         self.delegate = delegate
@@ -37,14 +45,24 @@ class TodoEntryViewModel {
 
 // MARK:- Public API's
 extension TodoEntryViewModel {
-    func addTask() {
+    func addTodoItem() {
         guard let taskName = taskName, self.taskName?.isEmpty == false else {
             delegate?.handleFailure(.taskNameMissing)
             return
         }
         let todoItem = TodoItem(name: taskName, notes: taskNotes)
-        database.saveTodoItem(todoItem)
-        delegate.didAddTask()
+        remoteDatabase.saveTodoItem(todoItem)
+        delegate.didCompleteOperation(.add)
+    }
+    
+    func deleteTodoItem(_ todoItem: TodoItem) {
+        remoteDatabase.deleteTodoItem(todoItem)
+        delegate.didCompleteOperation(.delete)
+    }
+    
+    func updateTodoItem(_ todoItem: TodoItem) {
+        remoteDatabase.updateTodoItem(todoItem)
+        delegate.didCompleteOperation(.update)
     }
 }
 

@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import Firebase
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -15,6 +16,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        
+        FirebaseApp.configure()
+        
         window = UIWindow(frame: UIScreen.main.bounds)
         let navigationController = UINavigationController(rootViewController: TodoListVC())
         navigationController.navigationBar.barStyle = .black
@@ -22,17 +26,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         window?.rootViewController = navigationController
         window?.makeKeyAndVisible()
         
-        let familyNames = UIFont.familyNames
-        
-        for family in familyNames {
-            print("Family name " + family)
-            let fontNames = UIFont.fontNames(forFamilyName: family)
-            
-            for font in fontNames {
-                print("Font name: " + font)
-            }
-        }
-        
+        //        let familyNames = UIFont.familyNames
+        //
+        //        for family in familyNames {
+        //            print("Family name " + family)
+        //            let fontNames = UIFont.fontNames(forFamilyName: family)
+        //
+        //            for font in fontNames {
+        //                print("Font name: " + font)
+        //            }
+        //        }
         return true
     }
     

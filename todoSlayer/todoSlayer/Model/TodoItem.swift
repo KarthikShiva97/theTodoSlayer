@@ -9,10 +9,11 @@
 import Foundation
 import RealmSwift
 
-class TodoItem: Object {
-    @objc dynamic var id: String = UUID().uuidString
+class TodoItem {
+    @objc dynamic var ID: String = UUID().uuidString
     @objc dynamic var name = ""
     @objc dynamic var notes = ""
+    @objc dynamic var documentID = ""
     
     convenience init(name: String, notes: String) {
         self.init()
@@ -20,7 +21,34 @@ class TodoItem: Object {
         self.notes = notes
     }
     
-    override static func primaryKey() -> String? {
-        return "id"
+    convenience init?(json: [String: Any]) {
+        self.init()
+        guard let ID = json[Constants.ID] as? String,
+            let name = json[Constants.name] as? String,
+            let notes = json[Constants.notes] as? String,
+            let documentID = json[Constants.documentID] as? String else {
+                print("Failed to convert JSON to Todo Item! JSON -> \(json)")
+                return nil
+        }
+        self.ID = ID
+        self.name = name
+        self.notes = notes
+        self.documentID = documentID
+    }
+    
+    struct Constants {
+        static let name = "name"
+        static let ID = "ID"
+        static let notes = "notes"
+        static let documentID = "documentID"
+    }
+}
+
+extension TodoItem {
+    var json: [String: Any] {
+        return [ TodoItem.Constants.ID: ID,
+                 TodoItem.Constants.name: name,
+                 TodoItem.Constants.notes: notes,
+                 TodoItem.Constants.documentID: documentID]
     }
 }

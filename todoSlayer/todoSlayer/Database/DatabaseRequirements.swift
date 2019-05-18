@@ -9,12 +9,20 @@
 import Foundation
 import RealmSwift
 
-typealias DatabaseRequirements = TodoItemEntryDbAPI
+typealias DatabaseRequirements = TodoItemDetailViewDbAPI
 
-protocol TodoItemEntryDbAPI {
+protocol TodoItemDetailViewDbAPI {
     func saveTodoItem(_ todoItem: TodoItem)
+    func deleteTodoItem(_ todoItem: TodoItem)
+    func updateTodoItem(_ todoItem: TodoItem)
 }
 
-protocol TodoItemListViewDbAPI {
-    func getAllTodoItems() -> Results<TodoItem>
+protocol TodoItemListViewDbAPI: class {
+    var todoItemListViewDelegate: TodoItemListViewDbDelegate? {get set}
+}
+
+protocol TodoItemListViewDbDelegate: class {
+    func todoItemListViewDbDelegate(todoItems: [TodoItem])
+    func todoItemListViewDbDelegate(newTodoItem: TodoItem)
+    func todoItemListViewDbDelegate(deletedTodoItem: TodoItem)
 }

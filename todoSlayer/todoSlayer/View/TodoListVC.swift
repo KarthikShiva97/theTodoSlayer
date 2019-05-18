@@ -12,7 +12,7 @@ import Realm
 
 class TodoListVC: UIViewController {
     
-    private let viewModel = TodoListViewModel()
+    private lazy var viewModel = TodoListViewModel(delegate: self)
     
     private lazy var newTaskButton: UIButton = {
         let btn = UIButton()
@@ -28,7 +28,6 @@ class TodoListVC: UIViewController {
     private let topContainer: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.backgroundColor = .yellow
         return view
     }()
     
@@ -39,6 +38,8 @@ class TodoListVC: UIViewController {
         let cv = UICollectionView(frame: .zero, collectionViewLayout: flowLayout)
         cv.translatesAutoresizingMaskIntoConstraints = false
         cv.showsVerticalScrollIndicator = false
+        cv.bounces = true
+        cv.alwaysBounceVertical = true
         
         cv.delegate = self
         cv.dataSource = self
@@ -67,7 +68,11 @@ class TodoListVC: UIViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        collectionView.reloadData()
+        viewModel.willEnterScreen()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        viewModel.willLeaveScreen()
     }
 }
 
@@ -107,8 +112,7 @@ extension TodoListVC {
 // MARK:- Logic Handling
 extension TodoListVC {
     @objc private func handleNewTask() {
-        let todoItemEntryVC = TodoItemEntryVC()
-        present(todoItemEntryVC, animated: true, completion: nil)
+        viewModel.didSelectAddButton()
     }
 }
 
@@ -132,15 +136,15 @@ extension TodoListVC: UICollectionViewDataSource {
 extension TodoListVC: UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-
+        
         let todoName =  viewModel.getTodoItem(forIndexPath: indexPath).name
         
         let width = (collectionView.frame.width - (TaskCell.sidePadding * 2))
         let size = CGSize(width: width, height: .greatestFiniteMagnitude)
         let attributes: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: TaskCell.taskNameFont as Any]
         let height = String(todoName).boundingRect(with: size,
-                                               options: .usesLineFragmentOrigin,
-                                               attributes: attributes, context: nil).height
+                                                   options: .usesLineFragmentOrigin,
+                                                   attributes: attributes, context: nil).height
         let finalHeight = (height + (TaskCell.topBottomPadding * 2) + 5)
         
         return CGSize(width: collectionView.frame.width, height: finalHeight)
@@ -150,4 +154,31 @@ extension TodoListVC: UICollectionViewDelegateFlowLayout {
         return 29
     }
     
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        viewModel.didSelectItem(atIndexPath: indexPath)
+    }
+}
+
+extension TodoListVC: TodoListViewModelDelegate {
+    
+    func openTodoDetailVC(withMode mode: TodoDetailVC.Mode) {
+        let todoItemEntryVC = TodoDetailVC(mode: mode)
+        present(todoItemEntryVC, animated: true, completion: nil)
+    }
+    
+    func appendItem(_ todoItem: TodoItem, atIndexPath indexPath: IndexPath) {
+        collectionView.insertItems(at: [indexPath])
+    }
+    
+    func deleteItem(atIndexPath indexPath: IndexPath) {
+        collectionView.deleteItems(at: [indexPath])
+    }
+    
+    func scrollToItem(atIndexPath indexPath: IndexPath) {
+        collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
+    }
+    
+    func reloadAllItems() {
+        collectionView.reloadData()
+    }
 }

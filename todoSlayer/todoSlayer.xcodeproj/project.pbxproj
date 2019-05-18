@@ -16,7 +16,11 @@
 		F03AB5F52284915300E37B2E /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5F42284915300E37B2E /* TodoItem.swift */; };
 		F03AB5F72284954E00E37B2E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5F62284954E00E37B2E /* Extensions.swift */; };
 		F03AB5F92284967200E37B2E /* TodoListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5F82284967200E37B2E /* TodoListViewModel.swift */; };
-		F03AB5FB2284971B00E37B2E /* TodoItemEntryVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5FA2284971B00E37B2E /* TodoItemEntryVC.swift */; };
+		F03AB5FB2284971B00E37B2E /* TodoDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5FA2284971B00E37B2E /* TodoDetailVC.swift */; };
+		F08EA8C0228FBB090003698B /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F08EA8BF228FBB090003698B /* GoogleService-Info.plist */; };
+		F08EA8C4228FC4210003698B /* FirebaseLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F08EA8C3228FC4210003698B /* FirebaseLayer.swift */; };
+		F08EA8C6228FC49E0003698B /* FirebaseLayer + todoItemEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F08EA8C5228FC49E0003698B /* FirebaseLayer + todoItemEntry.swift */; };
+		F08EA8C8228FC7AC0003698B /* FirebaseLayer + todoItemList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F08EA8C7228FC7AC0003698B /* FirebaseLayer + todoItemList.swift */; };
 		F09AC65E2287F753003DC091 /* TodoEntryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F09AC65D2287F753003DC091 /* TodoEntryViewModel.swift */; };
 		F09AC6632288064B003DC091 /* RealmLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F09AC6622288064B003DC091 /* RealmLayer.swift */; };
 		F09AC66522880675003DC091 /* DatabaseRequirements.swift in Sources */ = {isa = PBXBuildFile; fileRef = F09AC66422880675003DC091 /* DatabaseRequirements.swift */; };
@@ -37,7 +41,11 @@
 		F03AB5F42284915300E37B2E /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
 		F03AB5F62284954E00E37B2E /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		F03AB5F82284967200E37B2E /* TodoListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListViewModel.swift; sourceTree = "<group>"; };
-		F03AB5FA2284971B00E37B2E /* TodoItemEntryVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItemEntryVC.swift; sourceTree = "<group>"; };
+		F03AB5FA2284971B00E37B2E /* TodoDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoDetailVC.swift; sourceTree = "<group>"; };
+		F08EA8BF228FBB090003698B /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		F08EA8C3228FC4210003698B /* FirebaseLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseLayer.swift; sourceTree = "<group>"; };
+		F08EA8C5228FC49E0003698B /* FirebaseLayer + todoItemEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FirebaseLayer + todoItemEntry.swift"; sourceTree = "<group>"; };
+		F08EA8C7228FC7AC0003698B /* FirebaseLayer + todoItemList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FirebaseLayer + todoItemList.swift"; sourceTree = "<group>"; };
 		F09AC65D2287F753003DC091 /* TodoEntryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoEntryViewModel.swift; sourceTree = "<group>"; };
 		F09AC6622288064B003DC091 /* RealmLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmLayer.swift; sourceTree = "<group>"; };
 		F09AC66422880675003DC091 /* DatabaseRequirements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseRequirements.swift; sourceTree = "<group>"; };
@@ -97,6 +105,7 @@
 				F010CBB5228835E200F2708A /* Cells */,
 				F09AC661228805C5003DC091 /* Database */,
 				F002A0A6227ECFA00018B679 /* Info.plist */,
+				F08EA8BF228FBB090003698B /* GoogleService-Info.plist */,
 				F09AC6602287F79E003DC091 /* Others */,
 				F03AB5F32284914200E37B2E /* Model */,
 				F03AB5F22284913A00E37B2E /* ViewModel */,
@@ -130,11 +139,31 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
+		F08EA8C1228FC3D90003698B /* Remote */ = {
+			isa = PBXGroup;
+			children = (
+				F08EA8C3228FC4210003698B /* FirebaseLayer.swift */,
+				F08EA8C5228FC49E0003698B /* FirebaseLayer + todoItemEntry.swift */,
+				F08EA8C7228FC7AC0003698B /* FirebaseLayer + todoItemList.swift */,
+			);
+			path = Remote;
+			sourceTree = "<group>";
+		};
+		F08EA8C2228FC3DC0003698B /* Local */ = {
+			isa = PBXGroup;
+			children = (
+				F09AC6622288064B003DC091 /* RealmLayer.swift */,
+				F09AC66622880715003DC091 /* RealmLayer + TodoItemEntry.swift */,
+				F010CBB822883F7E00F2708A /* RealmLayer + TodoItemList.swift */,
+			);
+			path = Local;
+			sourceTree = "<group>";
+		};
 		F09AC65F2287F77A003DC091 /* View */ = {
 			isa = PBXGroup;
 			children = (
 				F002A09C227ECF9E0018B679 /* TodoListVC.swift */,
-				F03AB5FA2284971B00E37B2E /* TodoItemEntryVC.swift */,
+				F03AB5FA2284971B00E37B2E /* TodoDetailVC.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -152,10 +181,9 @@
 		F09AC661228805C5003DC091 /* Database */ = {
 			isa = PBXGroup;
 			children = (
+				F08EA8C2228FC3DC0003698B /* Local */,
+				F08EA8C1228FC3D90003698B /* Remote */,
 				F09AC66422880675003DC091 /* DatabaseRequirements.swift */,
-				F09AC6622288064B003DC091 /* RealmLayer.swift */,
-				F09AC66622880715003DC091 /* RealmLayer + TodoItemEntry.swift */,
-				F010CBB822883F7E00F2708A /* RealmLayer + TodoItemList.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -221,6 +249,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F002A0A2227ECFA00018B679 /* Assets.xcassets in Resources */,
+				F08EA8C0228FBB090003698B /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -234,15 +263,29 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-todoSlayer/Pods-todoSlayer-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/BoringSSL-GRPC/openssl_grpc.framework",
+				"${BUILT_PRODUCTS_DIR}/GoogleUtilities/GoogleUtilities.framework",
+				"${BUILT_PRODUCTS_DIR}/Protobuf/Protobuf.framework",
 				"${BUILT_PRODUCTS_DIR}/Realm/Realm.framework",
 				"${BUILT_PRODUCTS_DIR}/RealmSwift/RealmSwift.framework",
 				"${BUILT_PRODUCTS_DIR}/SnapKit/SnapKit.framework",
+				"${BUILT_PRODUCTS_DIR}/gRPC-C++/grpcpp.framework",
+				"${BUILT_PRODUCTS_DIR}/gRPC-Core/grpc.framework",
+				"${BUILT_PRODUCTS_DIR}/leveldb-library/leveldb.framework",
+				"${BUILT_PRODUCTS_DIR}/nanopb/nanopb.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/openssl_grpc.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleUtilities.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Protobuf.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Realm.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RealmSwift.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SnapKit.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/grpcpp.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/grpc.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/leveldb.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/nanopb.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -276,14 +319,17 @@
 			files = (
 				F002A09D227ECF9E0018B679 /* TodoListVC.swift in Sources */,
 				F03AB5F52284915300E37B2E /* TodoItem.swift in Sources */,
-				F03AB5FB2284971B00E37B2E /* TodoItemEntryVC.swift in Sources */,
+				F03AB5FB2284971B00E37B2E /* TodoDetailVC.swift in Sources */,
 				F09AC65E2287F753003DC091 /* TodoEntryViewModel.swift in Sources */,
 				F09AC66522880675003DC091 /* DatabaseRequirements.swift in Sources */,
 				F002A09B227ECF9E0018B679 /* AppDelegate.swift in Sources */,
 				F03AB5F72284954E00E37B2E /* Extensions.swift in Sources */,
 				F010CBB7228835F500F2708A /* TaskCell.swift in Sources */,
+				F08EA8C6228FC49E0003698B /* FirebaseLayer + todoItemEntry.swift in Sources */,
+				F08EA8C8228FC7AC0003698B /* FirebaseLayer + todoItemList.swift in Sources */,
 				F010CBB922883F7E00F2708A /* RealmLayer + TodoItemList.swift in Sources */,
 				F03AB5F92284967200E37B2E /* TodoListViewModel.swift in Sources */,
+				F08EA8C4228FC4210003698B /* FirebaseLayer.swift in Sources */,
 				F09AC6632288064B003DC091 /* RealmLayer.swift in Sources */,
 				F09AC66722880715003DC091 /* RealmLayer + TodoItemEntry.swift in Sources */,
 			);
