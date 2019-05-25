@@ -15,29 +15,6 @@ fileprivate var isInitialFetch = false
 
 extension FirebaseLayer: TodoItemListViewDbAPI {
     
-    func attachListenerForTodoItemListPositions() {
-        let pathToListen = firebase.collection("taskOrder").document("list1")
-        todoItemOrderEventListener = pathToListen.addSnapshotListener(){ (snapshot, error) in
-            
-            let errMsg = "Failed to fetch todo item order!"
-            guard error == nil else {
-                print(error!)
-                print(errMsg)
-                return
-            }
-            
-            guard let snapshot = snapshot else { return }
-            guard let todoItemOrder = snapshot.data()?["positions"] as? [String] else {
-                print(errMsg)
-                self.todoItemListViewDelegate?.todoItemListViewDbDelegate(todoItemPositions: [])
-                return
-            }
-            
-            self.todoItemListViewDelegate?.todoItemListViewDbDelegate(todoItemPositions: todoItemOrder)
-        }
-        
-    }
-    
     func attachListenerForAllTodoItems() {
         isInitialFetch = true
         
@@ -74,12 +51,54 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
         }
     }
     
+    func attachListenerForTodoItemListPositions() {
+        let pathToListen = firebase.collection("taskOrder").document("list1")
+        todoItemOrderEventListener = pathToListen.addSnapshotListener(){ (snapshot, error) in
+            
+            let errMsg = "Failed to fetch todo item order!"
+            guard error == nil else {
+                print(error!)
+                print(errMsg)
+                return
+            }
+            
+            guard let snapshotData = snapshot?.data() else { return }
+            
+            guard let todoItemOrder = snapshotData["positions"] as? [String] else {
+                print(errMsg)
+                self.todoItemListViewDelegate?.todoItemListViewDbDelegate(todoItemPositions: [])
+                return
+            }
+            
+            if let lastPositionChange = snapshotData["last_position_change"] as? [String: Int] {
+                
+                guard let fromIndex = lastPositionChange[PositionChange.from.rawValue],
+                    let toIndex = lastPositionChange[PositionChange.to.rawValue] else {
+                        print("Failed to get last Position Changes!")
+                        return
+                }
+                
+                self.todoItemListViewDelegate?.todoItemPositionDidChange(from: fromIndex, to: toIndex)
+                
+            }
+            
+            self.todoItemListViewDelegate?.todoItemListViewDbDelegate(todoItemPositions: todoItemOrder)
+        }
+        
+    }
+    
     func updateTodoListPositions(positions: [String], positionChange: [String: Int]) {
         let pathToUpdate = firebase.collection("taskOrder").document("list1")
-        pathToUpdate.setData(["positions": positions, "position_change": positionChange])
+        pathToUpdate.setData(["positions": positions, "last_position_change": positionChange])
+    }
+    
+    func clearLastPositionChanges() {
+        let pathToUpdate = firebase.collection("taskOrder").document("list1")
+        pathToUpdate.updateData(["last_position_change": FieldValue.delete()])
     }
     
     func detachListener() {
-        allTodoItemsEventListener.remove()
+//        allTodoItemsEventListener?.remove()
     }
+    
 }

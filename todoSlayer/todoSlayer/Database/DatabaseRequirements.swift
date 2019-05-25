@@ -16,7 +16,8 @@ protocol TodoItemDetailViewDbAPI {
     func deleteTodoItem(_ todoItem: TodoItem)
     func updateTodoItem(_ todoItem: TodoItem)
     func createListPosition(forDocumentID documentID: String)
-        func updateTodoListPositions(positions: [String], positionChange: [String: Int])
+    func updateTodoListPositions(positions: [String], positionChange: [String: Int])
+    func clearLastPositionChanges()
 }
 
 protocol TodoItemListViewDbAPI: class {
@@ -25,6 +26,7 @@ protocol TodoItemListViewDbAPI: class {
 
 protocol TodoItemListViewDbDelegate: class {
     func todoItemListViewDbDelegate(todoItemPositions: [String])
+    func todoItemPositionDidChange(from sourceIndex: Int, to destinationIndex: Int)
     func todoItemListViewDbDelegate(allTodoItems: [TodoItem])
     func todoItemListViewDbDelegate(didAddTodoItem newTodoItem: TodoItem)
     func todoItemListViewDbDelegate(didDeleteTodoItem deletedTodoItem: TodoItem)

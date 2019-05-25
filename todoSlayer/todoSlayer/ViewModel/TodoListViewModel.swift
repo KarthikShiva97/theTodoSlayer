@@ -22,6 +22,7 @@ protocol TodoListViewModelDelegate: class {
     func deleteItem(atIndexPath indexPath: IndexPath)
     func scrollToItem(atIndexPath indexPath: IndexPath)
     func openTodoDetailVC(withMode mode: TodoDetailVC.Mode)
+    func moveItem(at sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath)
 }
 
 enum PositionChange: String {
@@ -102,7 +103,8 @@ extension TodoListViewModel {
     }
     
     func willLeaveScreen() {
-//        remoteDatabase.detachListener()
+        remoteDatabase.clearLastPositionChanges()
+        remoteDatabase.detachListener()
     }
     
     func getTotalCount() -> Int {
@@ -124,6 +126,21 @@ extension TodoListViewModel {
 }
 
 extension TodoListViewModel: TodoItemListViewDbDelegate {
+    
+    func todoItemPositionDidChange(from sourceIndex: Int, to destinationIndex: Int) {
+        let maxValidIndex = todoItems.count - 1
+        guard sourceIndex <= maxValidIndex && destinationIndex <= maxValidIndex else {
+            print("Inavlid Position Change !")
+            return
+        }
+        
+        let removedItem = todoItems.remove(at: sourceIndex)
+        todoItems.insert(removedItem, at: destinationIndex)
+        
+        let sourceIndexPath = IndexPath(row: sourceIndex, section: 0)
+        let destinationIndexPath = IndexPath(row: destinationIndex, section: 0)
+        delegate.moveItem(at: sourceIndexPath, to: destinationIndexPath)
+    }
     
     func todoItemListViewDbDelegate(todoItemPositions: [String]) {
         self.todoItemsPositions = todoItemPositions

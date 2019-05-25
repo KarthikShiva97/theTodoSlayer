@@ -221,6 +221,10 @@ extension TodoListVC {
 
 extension TodoListVC: TodoListViewModelDelegate {
     
+    func moveItem(at sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        collectionView.moveItem(at: sourceIndexPath, to: destinationIndexPath)
+    }
+    
     func openTodoDetailVC(withMode mode: TodoDetailVC.Mode) {
         let todoItemEntryVC = TodoDetailVC(mode: mode)
         present(todoItemEntryVC, animated: true, completion: nil)
@@ -235,7 +239,7 @@ extension TodoListVC: TodoListViewModelDelegate {
     }
     
     func scrollToItem(atIndexPath indexPath: IndexPath) {
-        collectionView.scrollToItem(at: indexPath, at: .bottom, animated: true)
+        collectionView.scrollToItem(at: indexPath, at: .top, animated: true)
     }
     
     func reloadAllItems() {
