@@ -52,3 +52,10 @@ extension TodoItem {
                  TodoItem.Constants.documentID: documentID]
     }
 }
+
+
+extension TodoItem: CustomDebugStringConvertible {
+    var debugDescription: String {
+        return "NAME:-> \(name)"
+    }
+}

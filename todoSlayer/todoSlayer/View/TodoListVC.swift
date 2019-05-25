@@ -62,6 +62,11 @@ class TodoListVC: UIViewController {
     override func viewDidLoad() {
         title = "Todo Killer"
         navigationController?.navigationBar.titleTextAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 25, weight: .medium)]
+        
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(handleEditButton))
+        
+        collectionView.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(handleLongPressGesture(gesture:))))
+        
         setupTopContainer()
         setupCollectionView()
         setupNewTaskButton()
@@ -73,6 +78,10 @@ class TodoListVC: UIViewController {
     
     override func viewWillDisappear(_ animated: Bool) {
         viewModel.willLeaveScreen()
+    }
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        collectionView.collectionViewLayout.invalidateLayout()
     }
 }
 
@@ -109,10 +118,19 @@ extension TodoListVC {
     }
 }
 
-// MARK:- Logic Handling
+// MARK:- Event Handling
 extension TodoListVC {
+    
     @objc private func handleNewTask() {
         viewModel.didSelectAddButton()
+    }
+    
+    @objc private func handleEditButton() {
+        let alertController = UIAlertController(title: "Sorting Options", message: "", preferredStyle: .actionSheet)
+        alertController.addAction(UIAlertAction(title: "Sort by name", style: .default, handler: nil))
+        alertController.addAction(UIAlertAction(title: "Sort by priority", style: .default, handler: nil))
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        present(alertController, animated: true, completion: nil)
     }
 }
 
@@ -157,7 +175,49 @@ extension TodoListVC: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         viewModel.didSelectItem(atIndexPath: indexPath)
     }
+    
 }
+
+// MARK:- Collection View Cells Reordering
+extension TodoListVC {
+    
+    func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        viewModel.moveItem(from: sourceIndexPath, to: destinationIndexPath)
+    }
+    
+    @objc func handleLongPressGesture(gesture: UILongPressGestureRecognizer) {
+        
+        switch gesture.state {
+            
+        case .began:
+            guard let selectedIndexPath = collectionView.indexPathForItem(at: gesture.location(in: collectionView)) else {
+                print("Reordering Failed! Cannot determine selected IndexPath!")
+                collectionView.endInteractiveMovement()
+                return
+            }
+            collectionView.beginInteractiveMovementForItem(at: selectedIndexPath)
+            
+        case .changed:
+            collectionView.updateInteractiveMovementTargetPosition(gesture.location(in: collectionView))
+            
+        case .ended:
+            collectionView.endInteractiveMovement()
+            
+        case .cancelled:
+            collectionView.cancelInteractiveMovement()
+            
+        default:
+            collectionView.cancelInteractiveMovement()
+            
+        } // switch ends ...
+        
+    } // func ends ...
+    
+} // extension ends ...
 
 extension TodoListVC: TodoListViewModelDelegate {
     
@@ -180,5 +240,11 @@ extension TodoListVC: TodoListViewModelDelegate {
     
     func reloadAllItems() {
         collectionView.reloadData()
+    }
+    
+    func reloadAllItemsWithAnimation() {
+        collectionView.performBatchUpdates({
+            collectionView.reloadSections(IndexSet(integer: 0))
+        }, completion: nil)
     }
 }

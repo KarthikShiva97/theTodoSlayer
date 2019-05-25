@@ -8,6 +8,7 @@
 
 import UIKit
 import SnapKit
+import CVCalendar
 
 class TodoDetailVC: UIViewController {
     
@@ -80,6 +81,39 @@ class TodoDetailVC: UIViewController {
         return btn
     }()
     
+    private lazy var dueDateButton: UIButton = {
+        let btn = UIButton()
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.titleLabel?.font = UIFont.systemFont(ofSize: 20, weight: .medium)
+        btn.setTitleColor(#colorLiteral(red: 0.9333333333, green: 0.9843137255, blue: 0.9843137255, alpha: 1), for: .normal)
+        btn.setTitle("Due Date", for: .normal)
+        btn.backgroundColor = #colorLiteral(red: 0.5568627715, green: 0.3529411852, blue: 0.9686274529, alpha: 1)
+        btn.addTarget(self, action: #selector(handleDueDate), for: .touchUpInside)
+        return btn
+    }()
+    
+    private lazy var reminderDateButton: UIButton = {
+        let btn = UIButton()
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.titleLabel?.font = UIFont.systemFont(ofSize: 20, weight: .medium)
+        btn.setTitleColor(#colorLiteral(red: 0.9333333333, green: 0.9843137255, blue: 0.9843137255, alpha: 1), for: .normal)
+        btn.setTitle("Reminder Date", for: .normal)
+        btn.backgroundColor = #colorLiteral(red: 0.8549019694, green: 0.250980407, blue: 0.4784313738, alpha: 1)
+        btn.addTarget(self, action: #selector(handleReminderDate), for: .touchUpInside)
+        return btn
+    }()
+    
+    private lazy var priorityButton: UIButton = {
+        let btn = UIButton()
+        btn.translatesAutoresizingMaskIntoConstraints = false
+        btn.titleLabel?.font = UIFont.systemFont(ofSize: 20, weight: .medium)
+        btn.setTitleColor(#colorLiteral(red: 0.9333333333, green: 0.9843137255, blue: 0.9843137255, alpha: 1), for: .normal)
+        btn.setTitle("Priority", for: .normal)
+        btn.backgroundColor = #colorLiteral(red: 0.9607843161, green: 0.7058823705, blue: 0.200000003, alpha: 1)
+        btn.addTarget(self, action: #selector(handlePriority), for: .touchUpInside)
+        return btn
+    }()
+    
     private lazy var stackView: UIStackView = {
         let sv = UIStackView()
         sv.translatesAutoresizingMaskIntoConstraints = false
@@ -87,7 +121,7 @@ class TodoDetailVC: UIViewController {
         sv.alignment = UIStackView.Alignment.fill
         sv.distribution = UIStackView.Distribution.equalCentering
         sv.isLayoutMarginsRelativeArrangement = true
-        sv.layoutMargins = UIEdgeInsets(top: 125, left: 50, bottom: 150, right: 50)
+        sv.layoutMargins = UIEdgeInsets(top: 125, left: 50, bottom: 50, right: 50)
         sv.spacing = 20
         sv.setCustomSpacing(10, after: taskNotesTextField)
         return sv
@@ -120,6 +154,15 @@ class TodoDetailVC: UIViewController {
         btn.imageEdgeInsets = UIEdgeInsets(top: 7, left: 7, bottom: 7, right: 7)
         return btn
     }()
+    
+    
+    private lazy var calenderView: CVCalendarView = {
+        let calenderView = CVCalendarView()
+        calenderView.translatesAutoresizingMaskIntoConstraints = false
+        calenderView.delegate = self
+        return calenderView
+    }()
+    
     
     init(mode: Mode) {
         self.mode = mode
@@ -197,11 +240,18 @@ extension TodoDetailVC {
             stackView.addArrangedSubview(deleteButton)
         }
         
+        stackView.addArrangedSubview(dueDateButton)
+        stackView.addArrangedSubview(reminderDateButton)
+        
         taskNameTextField.heightAnchor.constraint(equalToConstant: 70).isActive = true
         taskNotesTextField.heightAnchor.constraint(equalToConstant: 200).isActive = true
+        
         addButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
         deleteButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
         updateButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
+        
+        reminderDateButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
+        dueDateButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
     }
     
     private func setupScrollView() {
@@ -269,8 +319,8 @@ extension TodoDetailVC {
     
     @objc private func handleUpdateTask() {
         guard let name = taskNameTextField.text,
-              let notes = taskNotesTextField.text,
-              let documentID = self.todoItem?.documentID else { return }
+            let notes = taskNotesTextField.text,
+            let documentID = self.todoItem?.documentID else { return }
         let todoItem = TodoItem(name: name, notes: notes)
         todoItem.documentID = documentID
         viewModel.updateTodoItem(todoItem)
@@ -279,6 +329,25 @@ extension TodoDetailVC {
     @objc private func handleClose() {
         self.dismiss(animated: true, completion: nil)
     }
+    
+    @objc private func handleDueDate() {
+//        view.addSubview(calenderView)
+//        calenderView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+//        calenderView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+//        calenderView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+//        calenderView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.5).isActive = true
+    }
+    
+    @objc private func handleReminderDate() {
+        
+    }
+    
+    @objc private func handlePriority() {
+        let alertView = UIAlertController(title: "Choose Task Priority", message: "", preferredStyle: .actionSheet)
+//        alertView.addAction(UIAlertAction(title: "1", style: .default, handler: <#T##((UIAlertAction) -> Void)?##((UIAlertAction) -> Void)?##(UIAlertAction) -> Void#>))
+    }
+
+    
 }
 
 extension TodoDetailVC: TodoEntryViewModelDelegate {
@@ -331,3 +400,15 @@ extension TodoDetailVC {
     } // showAlertView func ends ...
     
 } // extension ends ...
+
+extension TodoDetailVC: CVCalendarViewDelegate {
+    
+    func presentationMode() -> CalendarMode {
+        return .monthView
+    }
+    
+    func firstWeekday() -> Weekday {
+        return .monday
+    }
+    
+}
