@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import RealmSwift
 
 class TodoItem {
     @objc dynamic var ID: String = UUID().uuidString

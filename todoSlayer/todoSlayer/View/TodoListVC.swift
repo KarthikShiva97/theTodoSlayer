@@ -7,8 +7,6 @@
 //
 
 import UIKit
-import RealmSwift
-import Realm
 
 class TodoListVC: UIViewController {
     
@@ -76,8 +74,8 @@ class TodoListVC: UIViewController {
         viewModel.willEnterScreen()
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        viewModel.willLeaveScreen()
+    override func viewDidDisappear(_ animated: Bool) {
+        viewModel.didLeaveScreen()
     }
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {

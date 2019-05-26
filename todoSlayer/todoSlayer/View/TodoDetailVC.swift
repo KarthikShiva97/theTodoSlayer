@@ -365,6 +365,9 @@ extension TodoDetailVC: TodoEntryViewModelDelegate {
         case .update:
             didUpdateTask()
             
+        case .reorder:
+            fatalError("Invalid operation!")
+            
         }
         
     }

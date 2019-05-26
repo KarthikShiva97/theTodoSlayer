@@ -8,7 +8,6 @@
 //
 
 import Foundation
-import RealmSwift
 import Firebase
 import FirebaseFirestore
 
@@ -16,10 +15,11 @@ enum TaskEntryFailure {
     case taskNameMissing
 }
 
-enum Operation {
+enum Operation: String {
     case add
     case delete
     case update
+    case reorder
 }
 
 protocol TodoEntryViewModelDelegate: class {

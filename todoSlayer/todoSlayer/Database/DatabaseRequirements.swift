@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import RealmSwift
 
 typealias DatabaseRequirements = TodoItemDetailViewDbAPI
 
@@ -25,9 +24,8 @@ protocol TodoItemListViewDbAPI: class {
 }
 
 protocol TodoItemListViewDbDelegate: class {
-    func todoItemListViewDbDelegate(todoItemPositions: [String])
     func todoItemPositionDidChange(from sourceIndex: Int, to destinationIndex: Int)
-    func todoItemListViewDbDelegate(allTodoItems: [TodoItem])
+    func todoItemListViewDbDelegate(positions: [String])
     func todoItemListViewDbDelegate(didAddTodoItem newTodoItem: TodoItem)
     func todoItemListViewDbDelegate(didDeleteTodoItem deletedTodoItem: TodoItem)
 }

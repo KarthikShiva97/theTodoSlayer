@@ -7,8 +7,7 @@
 //
 
 import Foundation
-import RealmSwift
-
+import UIKit
 
 struct TodoItemListModel {
     let name: String
@@ -30,6 +29,12 @@ enum PositionChange: String {
     case to
 }
 
+enum TodoItemListViewDbAPIError: Error {
+    case typecastFailed
+    case nilSnapshot
+    case generalError(Error)
+}
+
 class TodoListViewModel {
     
     private weak var delegate: TodoListViewModelDelegate!
@@ -38,32 +43,17 @@ class TodoListViewModel {
         return FirebaseLayer()
     }()
     
-    private var todoItemsPositions: [String]!
-    
-    private var indexPathDocumentIDMap: [IndexPath: String]! {
-        willSet {
-            
-            // Initially indexPathDocumentIDMap is nil,
-            // After determining the order of documents, fetch all documents
-            if indexPathDocumentIDMap == nil {
-                remoteDatabase.attachListenerForAllTodoItems()
-                return
-            }
-        }
-        
+    private var todoItemsPositions = [String]() {
         didSet {
-            // If there is an update while there is already a mapping between document Id and todo items,
-            // it means that there is an update to the position of the items
-            if documentIDTodoItemMap != nil {
-                delegate.reloadAllItemsWithAnimation()
-            }
-            
+            createIndexPathDocumentIDMap()
         }
     }
     
-    private var documentIDTodoItemMap: [String: TodoItem]!
+    private var indexPathDocumentIDMap = [IndexPath: String]()
+    private var documentIDTodoItemMap = [String: TodoItem]()
     
-    var todoItems: [TodoItem] = []
+    private var lastSourceIndex: Int = 0
+    private var lastDestinationIndex: Int = 0
     
     init(delegate: TodoListViewModelDelegate) {
         self.delegate = delegate
@@ -74,23 +64,21 @@ class TodoListViewModel {
 extension TodoListViewModel {
     
     func moveItem(from source: IndexPath, to destination: IndexPath) {
-        let removedItem = todoItems.remove(at: source.row)
-        todoItems.insert(removedItem, at: destination.row)
-        
-        // Updating Document Positions locally
-        let removedDocumentID = todoItemsPositions.remove(at: source.row)
-        todoItemsPositions.insert(removedDocumentID, at: destination.row)
+        lastSourceIndex = source.row
+        lastDestinationIndex = destination.row
         
         let positionChange: [String: Int] = [PositionChange.from.rawValue: source.row,
                                              PositionChange.to.rawValue: destination.row]
-        
         // Update Document Positions to Remote
         remoteDatabase.updateTodoListPositions(positions: todoItemsPositions, positionChange: positionChange)
     }
     
     func didSelectItem(atIndexPath indexPath: IndexPath) {
-        let todoItemAtIndexPath = todoItems[indexPath.row]
-        delegate?.openTodoDetailVC(withMode: .existingTodoItem(todoItemAtIndexPath))
+        guard let todoItem = getTodoItem(atIndexPath: indexPath) else {
+            Logger.log(reason: "Cannot show detail view for todo Item at \(indexPath) !")
+            return
+        }
+        delegate?.openTodoDetailVC(withMode: .existingTodoItem(todoItem))
     }
     
     func didSelectAddButton() {
@@ -98,61 +86,97 @@ extension TodoListViewModel {
     }
     
     func willEnterScreen() {
+        indexPathDocumentIDMap = [:]
+        documentIDTodoItemMap = [:]
         remoteDatabase.todoItemListViewDelegate = self
-        remoteDatabase.attachListenerForTodoItemListPositions()
+        getTodoItemsListPositions()
     }
     
-    func willLeaveScreen() {
+    func didLeaveScreen() {
         remoteDatabase.clearLastPositionChanges()
         remoteDatabase.detachListener()
     }
     
-    func getTotalCount() -> Int {
-        return todoItems.count
+    private func getTodoItemsListPositions() {
+        remoteDatabase.getTodoItemListPositions { [unowned self] (result) in
+            let positions = try! result.get()
+            self.todoItemsPositions = positions
+            self.createIndexPathDocumentIDMap()
+            self.getAllTodoItems()
+        }
     }
     
-    func getTodoItem(forIndexPath indexPath: IndexPath) -> TodoItemListModel {
-        guard let documentIDForIndexPath = indexPathDocumentIDMap[indexPath] else {
-            fatalError()
+    private func getAllTodoItems() {
+        remoteDatabase.getAllTodoItems { [unowned self] (result) in
+            let todoItems = try! result.get()
+            self.createDocumentIDTodoItemMap(todoItems: todoItems)
+            self.remoteDatabase.attachListenerForTodoItemListPositions()
+            self.remoteDatabase.attachListenerForAllTodoItems()
+            self.delegate.reloadAllItems()
+        }
+    }
+    
+    private func getTodoItem(atIndexPath indexPath: IndexPath) -> TodoItem? {
+        guard let documentID = indexPathDocumentIDMap[indexPath] else {
+            Logger.log(reason: "Cannot find document ID for IndexPath \(indexPath)")
+            return nil
         }
         
-        guard let todoItem = documentIDTodoItemMap[documentIDForIndexPath] else {
+        guard let todoItem = documentIDTodoItemMap[documentID] else {
+            Logger.log(reason: "Cannot find Todo Item ID for Document ID \(documentID)")
+            return nil
+        }
+        return todoItem
+    }
+    
+    private func removeTodoItem(atIndexPath indexPath: IndexPath) {
+        guard let documentID = getTodoItem(atIndexPath: indexPath)?.documentID else {
+            Logger.log(reason: "Failed to remove item at IndexPath \(indexPath)")
+            return
+        }
+        documentIDTodoItemMap[documentID] = nil
+    }
+    
+    
+    func getTotalCount() -> Int {
+        return documentIDTodoItemMap.values.count
+    }
+    
+    
+    func getTodoItem(forIndexPath indexPath: IndexPath) -> TodoItemListModel {
+        
+        guard let todoItem = getTodoItem(atIndexPath: indexPath) else {
             fatalError()
         }
         
         let textColor: UIColor = indexPath.row % 2 == 0 ? #colorLiteral(red: 0.5490196078, green: 0.7764705882, blue: 0.2901960784, alpha: 1) : #colorLiteral(red: 0.9647058824, green: 0.6901960784, blue: 0.0431372549, alpha: 1)
         return TodoItemListModel(name: todoItem.name, textColor: textColor)
     }
+    
 }
 
 extension TodoListViewModel: TodoItemListViewDbDelegate {
     
+    func todoItemListViewDbDelegate(positions: [String]) {
+        self.todoItemsPositions = positions
+    }
+    
     func todoItemPositionDidChange(from sourceIndex: Int, to destinationIndex: Int) {
-        let maxValidIndex = todoItems.count - 1
-        guard sourceIndex <= maxValidIndex && destinationIndex <= maxValidIndex else {
-            print("Inavlid Position Change !")
-            return
-        }
-        
-        let removedItem = todoItems.remove(at: sourceIndex)
-        todoItems.insert(removedItem, at: destinationIndex)
-        
+        guard lastSourceIndex != sourceIndex && lastDestinationIndex != destinationIndex else { return }
         let sourceIndexPath = IndexPath(row: sourceIndex, section: 0)
         let destinationIndexPath = IndexPath(row: destinationIndex, section: 0)
         delegate.moveItem(at: sourceIndexPath, to: destinationIndexPath)
     }
     
-    func todoItemListViewDbDelegate(todoItemPositions: [String]) {
-        self.todoItemsPositions = todoItemPositions
-        createIndexPathDocumentIDMap()
-    }
-    
     func todoItemListViewDbDelegate(didAddTodoItem newTodoItem: TodoItem) {
-        self.todoItems.append(newTodoItem)
-        let indexPathToInsert = IndexPath(item: todoItems.count - 1, section: 0)
-        let indexPathToScroll = IndexPath(item: todoItems.count - 2, section: 0)
+        
+        documentIDTodoItemMap[newTodoItem.documentID] = newTodoItem
+        
+        let indexPathToInsert = IndexPath(item: getTotalCount() - 1, section: 0)
+        let indexPathToScroll = IndexPath(item: getTotalCount() - 2, section: 0)
         
         // Insert document ID <-> Todo Item entry
+        indexPathDocumentIDMap[indexPathToInsert] = newTodoItem.documentID
         documentIDTodoItemMap[newTodoItem.documentID] = newTodoItem
         
         delegate.appendItem(newTodoItem, atIndexPath: indexPathToInsert)
@@ -160,41 +184,49 @@ extension TodoListViewModel: TodoItemListViewDbDelegate {
     }
     
     func todoItemListViewDbDelegate(didDeleteTodoItem deletedTodoItem: TodoItem) {
-        for (index, todoItem) in todoItems.enumerated() {
-            if todoItem.ID == deletedTodoItem.ID {
-                
-                // Delete document ID <-> Todo Item entry
-                documentIDTodoItemMap[todoItem.documentID] = nil
-                
-                todoItems.remove(at: index)
-                delegate.deleteItem(atIndexPath: IndexPath(item: index, section: 0))
-            }
+        
+        documentIDTodoItemMap[deletedTodoItem.documentID] = nil
+        
+        var indexPathToDelete: IndexPath!
+        
+        for (indexPath, documentID) in indexPathDocumentIDMap {
+            guard documentID == deletedTodoItem.documentID else { continue }
+            indexPathToDelete = indexPath
         }
+        
+        guard indexPathToDelete != nil else {
+            Logger.log(reason: "Cannot find IndexPath to delete for \(deletedTodoItem)!")
+            return
+        }
+        
+        delegate.deleteItem(atIndexPath: indexPathToDelete)
     }
-    
-    func todoItemListViewDbDelegate(allTodoItems: [TodoItem]) {
-        self.todoItems = allTodoItems
-        createDocumentIDTodoItemMap()
-        delegate.reloadAllItems()
-    }
-    
 }
 
 
 extension TodoListViewModel {
     
     private func createIndexPathDocumentIDMap() {
-        guard self.todoItemsPositions.isEmpty == false else { return }
+        
+        // Index Path Document ID map is created from todoItemPositions
+        // If the latter is empty, former should also be empty
+        guard self.todoItemsPositions.isEmpty == false else {
+            indexPathDocumentIDMap = [:]
+            return
+        }
+        
         var indexPathDocumentIDMap = [IndexPath: String]()
+        
         for index in 0...(todoItemsPositions.count - 1) {
             let indexPath = IndexPath(row: index, section: 0)
             let documentID = todoItemsPositions[index]
             indexPathDocumentIDMap[indexPath] = documentID
         }
+        
         self.indexPathDocumentIDMap = indexPathDocumentIDMap
     }
     
-    private func createDocumentIDTodoItemMap() {
+    private func createDocumentIDTodoItemMap(todoItems: [TodoItem]) {
         var documentIDTodoItemMap = [String: TodoItem]()
         todoItems.forEach { (todoItem) in
             documentIDTodoItemMap[todoItem.documentID] = todoItem
