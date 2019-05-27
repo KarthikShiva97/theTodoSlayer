@@ -55,8 +55,8 @@ extension TodoEntryViewModel {
         delegate.didCompleteOperation(.add)
     }
     
-    func deleteTodoItem(_ todoItem: TodoItem) {
-        remoteDatabase.deleteTodoItem(todoItem)
+    func deleteTodoItem(_ todoItem: TodoItem, atIndexPath indexPath: IndexPath) {
+        remoteDatabase.deleteTodoItem(todoItem, atIndex: indexPath.row)
         delegate.didCompleteOperation(.delete)
     }
     

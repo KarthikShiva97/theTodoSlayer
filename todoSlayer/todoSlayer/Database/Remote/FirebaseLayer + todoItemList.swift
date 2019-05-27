@@ -111,7 +111,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
         }
     }
     
-    
+    #warning("Refactor this function!")
     func attachListenerForTodoItemListPositions() {
         
         isInitialListViewPositionsFetch = true
@@ -149,10 +149,18 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                 return
             }
             
-            if lastOperation != .reorder {
-                self.todoItemListViewDelegate?.todoItemListViewDbDelegate(positions: positions)
+            self.todoItemListViewDelegate?.todoItemListViewDbDelegate(positions: positions)
+            
+            if lastOperation == .delete {
+                guard let lastRemovedIndex = snapshotData["last_removed_index"] as? Int else {
+                    Logger.log(reason: "Failed to get last removed index position!")
+                    return
+                }
+                self.todoItemListViewDelegate?.didDeletePositionForTodoItem(atIndex: lastRemovedIndex)
                 return
             }
+            
+            guard lastOperation == .reorder else { return }
             
             guard let lastPositionChange = snapshotData["last_position_change"] as? [String: Int] else {
                 Logger.log(reason: "Failed to get last position change!")
@@ -165,7 +173,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                     return
             }
             
-            self.todoItemListViewDelegate?.todoItemListViewDbDelegate(positions: positions)
+            
             self.todoItemListViewDelegate?.todoItemPositionDidChange(from: fromIndex, to: toIndex)
             return
             

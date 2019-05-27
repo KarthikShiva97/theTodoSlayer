@@ -55,6 +55,8 @@ class TodoListViewModel {
     private var lastSourceIndex: Int = 0
     private var lastDestinationIndex: Int = 0
     
+    private var indexPathToDelete: IndexPath?
+    
     init(delegate: TodoListViewModelDelegate) {
         self.delegate = delegate
     }
@@ -78,7 +80,7 @@ extension TodoListViewModel {
             Logger.log(reason: "Cannot show detail view for todo Item at \(indexPath) !")
             return
         }
-        delegate?.openTodoDetailVC(withMode: .existingTodoItem(todoItem))
+        delegate?.openTodoDetailVC(withMode: .existingTodoItem(todoItem, indexPath))
     }
     
     func didSelectAddButton() {
@@ -183,24 +185,22 @@ extension TodoListViewModel: TodoItemListViewDbDelegate {
         delegate.scrollToItem(atIndexPath: indexPathToScroll)
     }
     
+    
+    func didDeletePositionForTodoItem(atIndex index: Int) {
+        indexPathToDelete = IndexPath(row: index, section: 0)
+    }
+    
+    
     func todoItemListViewDbDelegate(didDeleteTodoItem deletedTodoItem: TodoItem) {
-        
-        documentIDTodoItemMap[deletedTodoItem.documentID] = nil
-        
-        var indexPathToDelete: IndexPath!
-        
-        for (indexPath, documentID) in indexPathDocumentIDMap {
-            guard documentID == deletedTodoItem.documentID else { continue }
-            indexPathToDelete = indexPath
-        }
-        
-        guard indexPathToDelete != nil else {
-            Logger.log(reason: "Cannot find IndexPath to delete for \(deletedTodoItem)!")
+        guard let indexPathToDelete = indexPathToDelete else {
+            Logger.log(reason: "Did not receive indexPath to delete from remote!")
             return
         }
-        
+        documentIDTodoItemMap[deletedTodoItem.documentID] = nil
         delegate.deleteItem(atIndexPath: indexPathToDelete)
+        self.indexPathToDelete = nil
     }
+    
 }
 
 

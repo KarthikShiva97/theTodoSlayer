@@ -22,8 +22,8 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
         documentPath.setData(data)
     }
     
-    func deleteTodoItem(_ todoItem: TodoItem) {
-        deleteListPosition(forDocumentID: todoItem.documentID)
+    func deleteTodoItem(_ todoItem: TodoItem, atIndex index: Int) {
+        deleteListPosition(forDocumentID: todoItem.documentID, atIndex: index)
         firebase.collection("tasks").document(todoItem.documentID).delete()
     }
     
@@ -37,16 +37,18 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
             guard error == nil else {
                 path.setData(["positions": [documentID],
                               "last_operation": Operation.add.rawValue,
+                              "last_removed_index": FieldValue.delete(),
                               "last_position_change": FieldValue.delete()], merge: false)
                 return
             }
         }
     }
     
-    internal func deleteListPosition(forDocumentID documentID: String) {
+    internal func deleteListPosition(forDocumentID documentID: String, atIndex index: Int) {
         let path = firebase.collection("taskOrder").document("list1")
         path.updateData(["positions": FieldValue.arrayRemove([documentID]),
                          "last_operation": Operation.delete.rawValue,
+                         "last_removed_index": index,
                          "last_position_change": FieldValue.delete()])
     }
     

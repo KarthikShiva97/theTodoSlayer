@@ -20,9 +20,11 @@ class TodoDetailVC: UIViewController {
         }
     }
     
+    private var todoItemIndexPath: IndexPath?
+    
     enum Mode {
         case newTodoItem
-        case existingTodoItem(TodoItem)
+        case existingTodoItem(TodoItem, IndexPath)
     }
     
     private var mode: Mode
@@ -171,8 +173,9 @@ class TodoDetailVC: UIViewController {
     }
     
     private func reflectModeChanges() {
-        if case let .existingTodoItem(todoItem) = self.mode {
+        if case let .existingTodoItem(todoItem, indexPath) = self.mode {
             self.todoItem = todoItem
+            self.todoItemIndexPath = indexPath
         }
     }
     
@@ -314,7 +317,7 @@ extension TodoDetailVC {
             print("Invalid State ! No Todo Item to delete!")
             return
         }
-        viewModel.deleteTodoItem(todoItem)
+        viewModel.deleteTodoItem(todoItem, atIndexPath: todoItemIndexPath!)
     }
     
     @objc private func handleUpdateTask() {
