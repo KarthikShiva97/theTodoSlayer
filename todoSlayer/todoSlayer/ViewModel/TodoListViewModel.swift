@@ -19,6 +19,7 @@ protocol TodoListViewModelDelegate: class {
     func reloadAllItems()
     func appendItem(_ todoItem: TodoItem, atIndexPath indexPath: IndexPath)
     func deleteItem(atIndexPath indexPath: IndexPath)
+    func reloadItem(atIndexPath indexPath: IndexPath)
     func scrollToItem(atIndexPath indexPath: IndexPath)
     func openTodoDetailVC(withMode mode: TodoDetailVC.Mode)
     func moveItem(at sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath)
@@ -71,6 +72,11 @@ extension TodoListViewModel {
         
         let positionChange: [String: Int] = [PositionChange.from.rawValue: source.row,
                                              PositionChange.to.rawValue: destination.row]
+        
+        // Update the document ID position locally
+        let documentID = todoItemsPositions.remove(at: source.row)
+        todoItemsPositions.insert(documentID, at: destination.row)
+        
         // Update Document Positions to Remote
         remoteDatabase.updateTodoListPositions(positions: todoItemsPositions, positionChange: positionChange)
     }
@@ -164,7 +170,7 @@ extension TodoListViewModel: TodoItemListViewDbDelegate {
     }
     
     func todoItemPositionDidChange(from sourceIndex: Int, to destinationIndex: Int) {
-        guard lastSourceIndex != sourceIndex && lastDestinationIndex != destinationIndex else { return }
+        if lastSourceIndex == sourceIndex && lastDestinationIndex == destinationIndex  { return }
         let sourceIndexPath = IndexPath(row: sourceIndex, section: 0)
         let destinationIndexPath = IndexPath(row: destinationIndex, section: 0)
         delegate.moveItem(at: sourceIndexPath, to: destinationIndexPath)
@@ -199,6 +205,17 @@ extension TodoListViewModel: TodoItemListViewDbDelegate {
         documentIDTodoItemMap[deletedTodoItem.documentID] = nil
         delegate.deleteItem(atIndexPath: indexPathToDelete)
         self.indexPathToDelete = nil
+    }
+    
+    
+    func todoItemListViewDbDelegate(didUpdateTodoItem updatedTodoItem: TodoItem) {
+        documentIDTodoItemMap[updatedTodoItem.documentID] = updatedTodoItem
+        guard let indexForUpdatedTodoItem = todoItemsPositions.firstIndex(of: updatedTodoItem.documentID) else {
+            Logger.log(reason: "Failed to update todoItem \(updatedTodoItem) !")
+            return
+        }
+        let indexPathToUpdate = IndexPath(row: indexForUpdatedTodoItem, section: 0)
+        delegate?.reloadItem(atIndexPath: indexPathToUpdate)
     }
     
 }

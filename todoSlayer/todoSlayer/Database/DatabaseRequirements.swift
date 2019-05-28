@@ -29,4 +29,5 @@ protocol TodoItemListViewDbDelegate: class {
     func todoItemListViewDbDelegate(positions: [String])
     func todoItemListViewDbDelegate(didAddTodoItem newTodoItem: TodoItem)
     func todoItemListViewDbDelegate(didDeleteTodoItem deletedTodoItem: TodoItem)
+    func todoItemListViewDbDelegate(didUpdateTodoItem updatedTodoItem: TodoItem)
 }

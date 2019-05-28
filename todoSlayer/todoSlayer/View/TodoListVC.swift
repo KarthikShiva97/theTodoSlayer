@@ -179,10 +179,6 @@ extension TodoListVC: UICollectionViewDelegateFlowLayout {
 // MARK:- Collection View Cells Reordering
 extension TodoListVC {
     
-    func collectionView(_ collectionView: UICollectionView, canMoveItemAt indexPath: IndexPath) -> Bool {
-        return true
-    }
-    
     func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
         viewModel.moveItem(from: sourceIndexPath, to: destinationIndexPath)
     }
@@ -230,6 +226,10 @@ extension TodoListVC: TodoListViewModelDelegate {
     
     func appendItem(_ todoItem: TodoItem, atIndexPath indexPath: IndexPath) {
         collectionView.insertItems(at: [indexPath])
+    }
+    
+    func reloadItem(atIndexPath indexPath: IndexPath) {
+        collectionView.reloadItems(at: [indexPath])
     }
     
     func deleteItem(atIndexPath indexPath: IndexPath) {

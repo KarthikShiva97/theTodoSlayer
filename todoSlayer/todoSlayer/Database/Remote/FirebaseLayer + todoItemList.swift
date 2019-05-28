@@ -107,6 +107,10 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                     self.todoItemListViewDelegate?.todoItemListViewDbDelegate(didDeleteTodoItem: todoItem)
                 }
                 
+                if change.type == .modified {
+                    self.todoItemListViewDelegate?.todoItemListViewDbDelegate(didUpdateTodoItem: todoItem)
+                }
+                
             }
         }
     }
@@ -172,7 +176,6 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                     Logger.log(reason: "Failed to get last position change!")
                     return
             }
-            
             
             self.todoItemListViewDelegate?.todoItemPositionDidChange(from: fromIndex, to: toIndex)
             return
