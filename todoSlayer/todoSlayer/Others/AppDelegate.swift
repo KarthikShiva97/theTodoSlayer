@@ -26,16 +26,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         window?.rootViewController = navigationController
         window?.makeKeyAndVisible()
         
-        //        let familyNames = UIFont.familyNames
-        //
-        //        for family in familyNames {
-        //            print("Family name " + family)
-        //            let fontNames = UIFont.fontNames(forFamilyName: family)
-        //
-        //            for font in fontNames {
-        //                print("Font name: " + font)
-        //            }
-        //        }
+//        let familyNames = UIFont.familyNames
+//
+//        for family in familyNames {
+//            print("Family name " + family)
+//            let fontNames = UIFont.fontNames(forFamilyName: family)
+//
+//            for font in fontNames {
+//                print("Font name: " + font)
+//            }
+//        }
         return true
     }
     

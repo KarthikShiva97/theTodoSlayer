@@ -58,8 +58,8 @@ class TodoListVC: UIViewController {
     }
     
     override func viewDidLoad() {
-        title = "Todo Killer"
-        navigationController?.navigationBar.titleTextAttributes = [NSAttributedString.Key.font: UIFont.systemFont(ofSize: 25, weight: .medium)]
+//        title = "Todo Killer"
+//        navigationController?.navigationBar.titleTextAttributes = [NSAttributedString.Key.font: UIFont(name: "Verdana", size: 23)!]
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(handleEditButton))
         
@@ -155,7 +155,7 @@ extension TodoListVC: UICollectionViewDelegateFlowLayout {
         
         let todoName =  viewModel.getTodoItem(forIndexPath: indexPath).name
         
-        let width = (collectionView.frame.width - (TaskCell.sidePadding * 2))
+        let width = (collectionView.frame.width - (TaskCell.leftSidePadding + TaskCell.rightSidePadding))
         let size = CGSize(width: width, height: .greatestFiniteMagnitude)
         let attributes: [NSAttributedString.Key: Any] = [NSAttributedString.Key.font: TaskCell.taskNameFont as Any]
         let height = String(todoName).boundingRect(with: size,
