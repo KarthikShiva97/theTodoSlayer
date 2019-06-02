@@ -9,10 +9,14 @@
 import Foundation
 import FirebaseFirestore
 
+//TODO:- Create Objects all the raw strings below
+
 extension FirebaseLayer: TodoItemDetailViewDbAPI {
     
+    fileprivate typealias Constants = ListConstants
+    
     func saveTodoItem(_ todoItem: TodoItem) {
-        let documentPath =  firebase.collection("tasks").document()
+        let documentPath =  firebase.collection(pendingTasksPath).document()
         let documentID = documentPath.documentID
         
         todoItem.setDocumentID(documentID)
@@ -24,32 +28,34 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
     
     func deleteTodoItem(_ todoItem: TodoItem, atIndex index: Int) {
         deleteListPosition(forDocumentID: todoItem.documentID, atIndex: index)
-        firebase.collection("tasks").document(todoItem.documentID).delete()
+        firebase.collection(pendingTasksPath).document(todoItem.documentID).delete()
     }
     
     func updateTodoItem(_ todoItem: TodoItem) {
-        firebase.collection("tasks").document(todoItem.documentID).setData(todoItem.json)
+        firebase.collection(pendingTasksPath).document(todoItem.documentID).setData(todoItem.json)
     }
     
     internal func createListPosition(forDocumentID documentID: String) {
-        let path = firebase.collection("taskOrder").document("list1")
+        let path = firebase.document(listMetaPath)
         path.updateData(["positions": FieldValue.arrayUnion([documentID]) ]) { (error) in
             guard error == nil else {
-                path.setData(["positions": [documentID],
-                              "last_operation": Operation.add.rawValue,
-                              "last_removed_index": FieldValue.delete(),
-                              "last_position_change": FieldValue.delete()], merge: true)
+                path.setData([Constants.Meta.positions: [documentID],
+                              Constants.Meta.lastOperation: ListOperation.add.rawValue,
+                              Constants.Meta.lastOperationMeta: NSNull()], merge: true)
                 return
             }
         }
     }
     
     internal func deleteListPosition(forDocumentID documentID: String, atIndex index: Int) {
-        let path = firebase.collection("taskOrder").document("list1")
-        path.updateData(["positions": FieldValue.arrayRemove([documentID]),
-                         "last_operation": Operation.delete.rawValue,
-                         "last_removed_index": index,
-                         "last_position_change": FieldValue.delete()])
-    }
+        let path = firebase.document(listMetaPath)
+        let lastOperationMeta = [Constants.Meta.LastOperationMeta.lastRemovedIndex: index]
+        path.updateData([
+            Constants.Meta.positions: FieldValue.arrayRemove([documentID]),
+            Constants.Meta.lastOperation: ListOperation.delete.rawValue,
+            Constants.Meta.lastOperationMeta: lastOperationMeta
+            ])
+        
+    } // deleteListPosition func ends ....
     
 }

@@ -9,6 +9,7 @@
 import Foundation
 import FirebaseFirestore
 
+
 fileprivate var allTodoItemsEventListener: ListenerRegistration!
 fileprivate var todoItemListPositionEventListener: ListenerRegistration!
 
@@ -19,7 +20,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
     
     func getTodoItemListPositions(onCompletion: @escaping (Result<[String], TodoItemListViewDbAPIError>)->()) {
         
-        let path = firebase.collection("taskOrder").document("list1")
+        let path = firebase.document(listMetaPath)
         path.getDocument { (snapshot, error) in
             
             let errorMsg = "Failed to get to-do item list positions!"
@@ -34,7 +35,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                 return onCompletion(.failure(.nilSnapshot))
             }
             
-            guard let positions = snapshotData["positions"] as? [String] else {
+            guard let positions = snapshotData[ListConstants.Meta.positions] as? [String] else {
                 Logger.log(reason: "\(errorMsg). Failed to typecast !")
                 return onCompletion(.failure(.typecastFailed))
             }
@@ -45,7 +46,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
     }
     
     func getAllTodoItems(onCompletion: @escaping (Result<[TodoItem], TodoItemListViewDbAPIError>)->()) {
-        let path = firebase.collection("tasks")
+        let path = firebase.collection(pendingTasksPath)
         path.getDocuments { (snapshot, error) in
             
             let errorMsg = "Failed to get to-do items!"
@@ -74,7 +75,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
         
         isInitialTodoItemsFetch = true
         
-        let pathToListen = firebase.collection("tasks").order(by: "name")
+        let pathToListen = firebase.collection(pendingTasksPath)
         allTodoItemsEventListener = pathToListen.addSnapshotListener { (snapshot, error) in
             
             if let error = error {
@@ -120,7 +121,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
         
         isInitialListViewPositionsFetch = true
         
-        let pathToListen = firebase.collection("taskOrder").document("list1")
+        let pathToListen = firebase.document(listMetaPath)
         todoItemListPositionEventListener = pathToListen.addSnapshotListener() { (snapshot, error) in
             
             guard isInitialListViewPositionsFetch == false else {
@@ -138,25 +139,33 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                 return
             }
             
-            guard let lastOperationAsString = snapshotData["last_operation"] as? String else {
+            guard let lastOperationAsString = snapshotData[ListConstants.Meta.lastOperation] as? String else {
                 Logger.log(.typecastFailed)
                 return
             }
             
-            guard let lastOperation = Operation(rawValue: lastOperationAsString) else {
+            guard let lastOperation = ListOperation(rawValue: lastOperationAsString) else {
                 Logger.log(.typecastFailed, reason: "Cannot get back lastOperation as enum!")
                 return
             }
             
-            guard let positions = snapshotData["positions"] as? [String] else {
+            guard let positions = snapshotData[ListConstants.Meta.positions] as? [String] else {
                 Logger.log(.typecastFailed, reason: "Failed to get list positions!")
                 return
             }
             
             self.todoItemListViewDelegate?.todoItemListViewDbDelegate(positions: positions)
             
+            guard [ListOperation.delete, ListOperation.reorder].contains(lastOperation) else { return }
+            
+            guard let lastOperationMeta = snapshotData[ListConstants.Meta.lastOperationMeta] as? [String: Any] else {
+                Logger.log(reason: "Failed to get Operation Meta!")
+                return
+            }
+            
             if lastOperation == .delete {
-                guard let lastRemovedIndex = snapshotData["last_removed_index"] as? Int else {
+                let lastRemovedIndexKey = ListConstants.Meta.LastOperationMeta.lastRemovedIndex
+                guard let lastRemovedIndex = lastOperationMeta[lastRemovedIndexKey] as? Int else {
                     Logger.log(reason: "Failed to get last removed index position!")
                     return
                 }
@@ -166,13 +175,11 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
             
             guard lastOperation == .reorder else { return }
             
-            guard let lastPositionChange = snapshotData["last_position_change"] as? [String: Int] else {
-                Logger.log(reason: "Failed to get last position change!")
-                return
-            }
+            let fromIndexKey = ListConstants.Meta.LastOperationMeta.fromIndex
+            let toIndexKey = ListConstants.Meta.LastOperationMeta.toIndex
             
-            guard let fromIndex = lastPositionChange[PositionChange.from.rawValue],
-                let toIndex = lastPositionChange[PositionChange.to.rawValue] else {
+            guard let fromIndex = lastOperationMeta[fromIndexKey] as? Int,
+                let toIndex =   lastOperationMeta[toIndexKey] as? Int else {
                     Logger.log(reason: "Failed to get last position change!")
                     return
             }
@@ -185,15 +192,15 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
     }
     
     func updateTodoListPositions(positions: [String], positionChange: [String: Int]) {
-        let pathToUpdate = firebase.collection("taskOrder").document("list1")
-        pathToUpdate.setData(["positions": positions,
-                              "last_operation": Operation.reorder.rawValue,
-                              "last_position_change": positionChange])
+        let pathToUpdate = firebase.document(listMetaPath)
+        pathToUpdate.setData([ListConstants.Meta.positions: positions,
+                              ListConstants.Meta.lastOperation: ListOperation.reorder.rawValue,
+                              ListConstants.Meta.lastOperationMeta: positionChange])
     }
     
     func clearLastPositionChanges() {
         let pathToUpdate = firebase.collection("taskOrder").document("list1")
-        pathToUpdate.updateData(["last_position_change": FieldValue.delete()])
+        //        pathToUpdate.updateData(["last_position_change": FieldValue.delete()])
     }
     
     func detachListener() {

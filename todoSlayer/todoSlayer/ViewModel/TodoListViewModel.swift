@@ -29,8 +29,8 @@ protocol TodoListViewModelDelegate: class {
 }
 
 enum PositionChange: String {
-    case from
-    case to
+    case from = "fromIndex"
+    case to = "toIndex"
 }
 
 enum TodoItemListViewDbAPIError: Error {

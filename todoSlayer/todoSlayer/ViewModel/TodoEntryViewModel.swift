@@ -15,7 +15,7 @@ enum TaskEntryFailure {
     case taskNameMissing
 }
 
-enum Operation: String {
+enum ListOperation: String {
     case add
     case delete
     case update
@@ -52,7 +52,7 @@ enum TaskPriority: Int {
 
 protocol TodoEntryViewModelDelegate: class {
     func handleFailure(_ failure: TaskEntryFailure)
-    func didCompleteOperation(_ operation: Operation)
+    func didCompleteOperation(_ operation: ListOperation)
 }
 
 class TodoEntryViewModel {

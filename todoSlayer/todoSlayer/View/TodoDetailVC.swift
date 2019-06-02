@@ -385,7 +385,7 @@ extension TodoDetailVC {
 
 extension TodoDetailVC: TodoEntryViewModelDelegate {
     
-    func didCompleteOperation(_ operation: Operation) {
+    func didCompleteOperation(_ operation: ListOperation) {
         
         switch operation {
             
