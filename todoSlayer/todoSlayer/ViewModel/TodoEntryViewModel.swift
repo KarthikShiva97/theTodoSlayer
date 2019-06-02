@@ -22,6 +22,11 @@ enum ListOperation: String {
     case reorder
 }
 
+enum TaskType {
+    case pending
+    case completed
+}
+
 enum TaskPriority: Int {
     case high
     case medium
@@ -80,7 +85,7 @@ extension TodoEntryViewModel {
             return
         }
         let todoItem = TodoItem(name: taskName, notes: taskNotes, priority: taskPriority)
-        remoteDatabase.saveTodoItem(todoItem)
+        remoteDatabase.saveTodoItem(todoItem, to: .pending)
         delegate.didCompleteOperation(.add)
     }
     

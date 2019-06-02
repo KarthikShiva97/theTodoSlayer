@@ -181,6 +181,8 @@ extension TodoListViewModel {
             checkBox.toggle()
             todoItem.isCompleted = checkBox.isChecked
             self.remoteDatabase.changeCompletionStatus(ForTodoItem: todoItem)
+            self.remoteDatabase.deleteTodoItem(todoItem, atIndex: indexPath.item)
+            self.remoteDatabase.saveTodoItem(todoItem, to: .completed)
         }
         
         return TodoItemListModel(name: todoItem.name,
@@ -232,17 +234,17 @@ extension TodoListViewModel: TodoItemListViewDbDelegate {
             return
         }
         
-        guard let documentIDToBeDeleted = indexPathDocumentIDMap[indexPathToDelete] else {
-            Logger.log(reason: "Remote data does not align with local data! Getting fresh data from remote!")
-            resetStateAndGetFreshData()
-            return
-        }
-        
-        guard documentIDToBeDeleted == deletedTodoItem.documentID else {
-            Logger.log(reason: "Remote data does not align with local data! Getting fresh data from remote!")
-            resetStateAndGetFreshData()
-            return
-        }
+//        guard let documentIDToBeDeleted = indexPathDocumentIDMap[indexPathToDelete] else {
+//            Logger.log(reason: "Remote data does not align with local data! Getting fresh data from remote!")
+//            resetStateAndGetFreshData()
+//            return
+//        }
+//
+//        guard documentIDToBeDeleted == deletedTodoItem.documentID else {
+//            Logger.log(reason: "Remote data does not align with local data! Getting fresh data from remote!")
+//            resetStateAndGetFreshData()
+//            return
+//        }
         
         documentIDTodoItemMap[deletedTodoItem.documentID] = nil
         delegate.deleteItem(atIndexPath: indexPathToDelete)

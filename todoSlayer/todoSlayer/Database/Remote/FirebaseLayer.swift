@@ -20,6 +20,7 @@ class FirebaseLayer {
     
     // MARK:- Constants
     let pendingTasksPath = "list1/\(ListConstants.taskType)/\(ListConstants.TaskType.pending)"
+    let completedTasksPath = "list1/\(ListConstants.taskType)/\(ListConstants.TaskType.completed)"
     let listMetaPath = "list1/\(ListConstants.meta)"
 }
 

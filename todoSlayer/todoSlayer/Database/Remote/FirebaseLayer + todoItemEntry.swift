@@ -15,12 +15,16 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
     
     fileprivate typealias Constants = ListConstants
     
-    func saveTodoItem(_ todoItem: TodoItem) {
-        let documentPath =  firebase.collection(pendingTasksPath).document()
-        let documentID = documentPath.documentID
+    func saveTodoItem(_ todoItem: TodoItem, to taskType: TaskType) {
         
+        let taskPath = taskType == .pending ? pendingTasksPath : completedTasksPath
+        let documentPath =  firebase.collection(taskPath).document()
+        let documentID = documentPath.documentID
         todoItem.setDocumentID(documentID)
-        createListPosition(forDocumentID: documentID)
+        
+        if taskType == .pending {
+            createListPosition(forDocumentID: documentID)
+        }
         
         let data = todoItem.json
         documentPath.setData(data)
@@ -60,4 +64,4 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
         
     } // deleteListPosition func ends ....
     
-}
+} // extension ends ....

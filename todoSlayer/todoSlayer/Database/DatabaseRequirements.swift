@@ -11,7 +11,7 @@ import Foundation
 typealias DatabaseRequirements = TodoItemDetailViewDbAPI
 
 protocol TodoItemDetailViewDbAPI {
-    func saveTodoItem(_ todoItem: TodoItem)
+    func saveTodoItem(_ todoItem: TodoItem, to taskType: TaskType)
     func deleteTodoItem(_ todoItem: TodoItem, atIndex index: Int)
     func updateTodoItem(_ todoItem: TodoItem)
     func createListPosition(forDocumentID documentID: String)
