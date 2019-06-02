@@ -20,22 +20,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         FirebaseApp.configure()
         
         window = UIWindow(frame: UIScreen.main.bounds)
+        
         let navigationController = UINavigationController(rootViewController: TodoListVC())
         navigationController.navigationBar.barStyle = .black
         navigationController.navigationBar.isTranslucent = false
+        navigationController.navigationBar.setBackgroundImage(UIImage(), for: .default)
+        navigationController.navigationBar.shadowImage = UIImage()
+        
         window?.rootViewController = navigationController
         window?.makeKeyAndVisible()
         
-//        let familyNames = UIFont.familyNames
-//
-//        for family in familyNames {
-//            print("Family name " + family)
-//            let fontNames = UIFont.fontNames(forFamilyName: family)
-//
-//            for font in fontNames {
-//                print("Font name: " + font)
-//            }
-//        }
+        let familyNames = UIFont.familyNames
+        
+        for family in familyNames {
+            print("Family name " + family)
+            let fontNames = UIFont.fontNames(forFamilyName: family)
+            
+            for font in fontNames {
+                print("Font name: " + font)
+            }
+        }
         return true
     }
     

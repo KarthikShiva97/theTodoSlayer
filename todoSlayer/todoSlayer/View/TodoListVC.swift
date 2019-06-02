@@ -23,9 +23,15 @@ class TodoListVC: UIViewController {
         return btn
     }()
     
-    private let topContainer: UIView = {
-        let view = UIView()
+    private let segmentedControl: UISegmentedControl = {
+        let view = UISegmentedControl(items: ["Pending", "Completed"])
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.selectedSegmentIndex = 0
+        let attributes = [NSAttributedString.Key.font: UIFont(name: "Avenir-Medium", size: 14) as Any,
+                          NSAttributedString.Key.foregroundColor: #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1)]
+        view.setTitleTextAttributes(attributes, for: .normal)
+        view.setTitleTextAttributes(attributes, for: .selected)
+        view.tintColor = #colorLiteral(red: 0.1882352941, green: 0.1921568627, blue: 0.1960784314, alpha: 1)
         return view
     }()
     
@@ -58,14 +64,13 @@ class TodoListVC: UIViewController {
     }
     
     override func viewDidLoad() {
-//        title = "Todo Killer"
-//        navigationController?.navigationBar.titleTextAttributes = [NSAttributedString.Key.font: UIFont(name: "Verdana", size: 23)!]
+        title = "Office Work"
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(handleEditButton))
         
         collectionView.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(handleLongPressGesture(gesture:))))
         
-        setupTopContainer()
+        setupSegmentedControl()
         setupCollectionView()
         setupNewTaskButton()
     }
@@ -86,23 +91,21 @@ class TodoListVC: UIViewController {
 // MARK:- View Layout Code
 extension TodoListVC {
     
+    private func setupSegmentedControl() {
+        view.addSubview(segmentedControl)
+        segmentedControl.snp.makeConstraints { (make) in
+            make.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(10)
+            make.centerX.equalToSuperview()
+        }
+    }
+    
     private func setupCollectionView() {
         view.addSubview(collectionView)
         collectionView.snp.makeConstraints { (make) in
             make.leading.equalTo(view).offset(17)
             make.bottom.equalTo(view)
             make.trailing.equalTo(view).offset(-17)
-            make.top.equalTo(topContainer.snp.bottom)
-        }
-    }
-    
-    private func setupTopContainer() {
-        view.addSubview(topContainer)
-        topContainer.snp.makeConstraints { (make) in
-            make.top.equalTo(view.safeAreaLayoutGuide.snp.top)
-            make.leading.equalTo(view.snp.leading)
-            make.trailing.equalTo(view.snp.trailing)
-            make.height.equalTo(view).multipliedBy(0.15)
+            make.top.equalTo(segmentedControl.snp.bottom).offset(30)
         }
     }
     

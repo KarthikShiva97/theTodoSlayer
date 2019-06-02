@@ -12,6 +12,9 @@ import UIKit
 struct TodoItemListModel {
     let name: String
     let textColor: UIColor
+    let completeButtonColor: UIColor
+    let isCompleted: Bool
+    let completeAction: ((RoundedCheckBoxButton)->())?
 }
 
 protocol TodoListViewModelDelegate: class {
@@ -107,7 +110,10 @@ extension TodoListViewModel {
     
     private func getTodoItemsListPositions() {
         remoteDatabase.getTodoItemListPositions { [unowned self] (result) in
-            let positions = try! result.get()
+            guard let positions = try? result.get() else {
+                Logger.log(reason: "Todo Item positions are nil!")
+                return
+            }
             self.todoItemsPositions = positions
             self.createIndexPathDocumentIDMap()
             self.getAllTodoItems()
@@ -158,7 +164,18 @@ extension TodoListViewModel {
         }
         
         let textColor: UIColor = indexPath.row % 2 == 0 ? #colorLiteral(red: 0.5490196078, green: 0.7764705882, blue: 0.2901960784, alpha: 1) : #colorLiteral(red: 0.9647058824, green: 0.6901960784, blue: 0.0431372549, alpha: 1)
-        return TodoItemListModel(name: todoItem.name, textColor: textColor)
+        let completeButtonColor = todoItem.priority.color
+        
+        let completeAction: ((RoundedCheckBoxButton) -> ())? = { checkBox in
+            checkBox.toggle()
+            todoItem.isCompleted = checkBox.isChecked
+        }
+        
+        return TodoItemListModel(name: todoItem.name,
+                                 textColor: textColor,
+                                 completeButtonColor: completeButtonColor,
+                                 isCompleted: todoItem.isCompleted,
+                                 completeAction: completeAction)
     }
     
 }

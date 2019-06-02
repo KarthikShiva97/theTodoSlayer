@@ -15,7 +15,7 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
         let documentPath =  firebase.collection("tasks").document()
         let documentID = documentPath.documentID
         
-        todoItem.documentID = documentID
+        todoItem.setDocumentID(documentID)
         createListPosition(forDocumentID: documentID)
         
         let data = todoItem.json
@@ -38,7 +38,7 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
                 path.setData(["positions": [documentID],
                               "last_operation": Operation.add.rawValue,
                               "last_removed_index": FieldValue.delete(),
-                              "last_position_change": FieldValue.delete()], merge: false)
+                              "last_position_change": FieldValue.delete()], merge: true)
                 return
             }
         }

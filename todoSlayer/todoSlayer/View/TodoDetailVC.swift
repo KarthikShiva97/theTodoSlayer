@@ -12,11 +12,12 @@ import CVCalendar
 
 class TodoDetailVC: UIViewController {
     
-    private var todoItem: TodoItem? = nil {
+    private var todoItem: TodoItem! = nil {
         didSet {
-            guard todoItem != nil else { return }
-            taskNameTextField.text = todoItem?.name
-            taskNotesTextField.text = todoItem?.notes
+            guard let todoItem = todoItem else { return }
+            taskNameTextField.text = todoItem.name
+            taskNotesTextField.text = todoItem.notes
+            priorityButton.setTitle(todoItem.priority.getName(), for: .normal)
         }
     }
     
@@ -34,7 +35,7 @@ class TodoDetailVC: UIViewController {
     private let taskNameTextField: UITextField = {
         let tf = UITextField()
         tf.translatesAutoresizingMaskIntoConstraints = false
-        tf.placeholder = "Enter Task Name!"
+        tf.placeholder = "Enter task name."
         tf.backgroundColor = UIColor(red: 0.96, green: 0.96, blue: 0.96, alpha: 1.0)
         return tf
     }()
@@ -43,7 +44,7 @@ class TodoDetailVC: UIViewController {
         let tv = UITextField()
         tv.translatesAutoresizingMaskIntoConstraints = false
         tv.font = UIFont.systemFont(ofSize: 14, weight: .medium)
-        tv.text = "OMG"
+        tv.text = "Enter notes."
         tv.backgroundColor = UIColor(red:0.96, green:0.96, blue:0.96, alpha:1.0)
         return tv
     }()
@@ -88,7 +89,7 @@ class TodoDetailVC: UIViewController {
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.titleLabel?.font = UIFont.systemFont(ofSize: 20, weight: .medium)
         btn.setTitleColor(#colorLiteral(red: 0.9333333333, green: 0.9843137255, blue: 0.9843137255, alpha: 1), for: .normal)
-        btn.setTitle("Due Date", for: .normal)
+        btn.setTitle("Choose Due Date", for: .normal)
         btn.backgroundColor = #colorLiteral(red: 0.5568627715, green: 0.3529411852, blue: 0.9686274529, alpha: 1)
         btn.addTarget(self, action: #selector(handleDueDate), for: .touchUpInside)
         return btn
@@ -99,7 +100,7 @@ class TodoDetailVC: UIViewController {
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.titleLabel?.font = UIFont.systemFont(ofSize: 20, weight: .medium)
         btn.setTitleColor(#colorLiteral(red: 0.9333333333, green: 0.9843137255, blue: 0.9843137255, alpha: 1), for: .normal)
-        btn.setTitle("Reminder Date", for: .normal)
+        btn.setTitle("Choose Reminder Date", for: .normal)
         btn.backgroundColor = #colorLiteral(red: 0.8549019694, green: 0.250980407, blue: 0.4784313738, alpha: 1)
         btn.addTarget(self, action: #selector(handleReminderDate), for: .touchUpInside)
         return btn
@@ -110,7 +111,7 @@ class TodoDetailVC: UIViewController {
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.titleLabel?.font = UIFont.systemFont(ofSize: 20, weight: .medium)
         btn.setTitleColor(#colorLiteral(red: 0.9333333333, green: 0.9843137255, blue: 0.9843137255, alpha: 1), for: .normal)
-        btn.setTitle("Priority", for: .normal)
+        btn.setTitle("Choose Priority", for: .normal)
         btn.backgroundColor = #colorLiteral(red: 0.9607843161, green: 0.7058823705, blue: 0.200000003, alpha: 1)
         btn.addTarget(self, action: #selector(handlePriority), for: .touchUpInside)
         return btn
@@ -235,6 +236,10 @@ extension TodoDetailVC {
         stackView.addArrangedSubview(taskNameTextField)
         stackView.addArrangedSubview(taskNotesTextField)
         
+        stackView.addArrangedSubview(priorityButton)
+        stackView.addArrangedSubview(dueDateButton)
+        stackView.addArrangedSubview(reminderDateButton)
+        
         switch mode {
         case .newTodoItem:
             stackView.addArrangedSubview(addButton)
@@ -243,15 +248,13 @@ extension TodoDetailVC {
             stackView.addArrangedSubview(deleteButton)
         }
         
-        stackView.addArrangedSubview(dueDateButton)
-        stackView.addArrangedSubview(reminderDateButton)
-        
         taskNameTextField.heightAnchor.constraint(equalToConstant: 70).isActive = true
         taskNotesTextField.heightAnchor.constraint(equalToConstant: 200).isActive = true
         
         addButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
         deleteButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
         updateButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
+        priorityButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
         
         reminderDateButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
         dueDateButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
@@ -280,19 +283,15 @@ extension TodoDetailVC {
     @objc private func handleTextFieldEvent(textField: UITextField) {
         if textField == taskNameTextField {
             if textField.text != todoItem?.name {
-                updateButton.isEnabled = true
-                updateButton.alpha = 1
+                updateButton.enable()
             } else {
-                updateButton.isEnabled = false
-                updateButton.alpha = 0.5
+                updateButton.disable()
             }
         } else {
             if textField.text != todoItem?.notes {
-                updateButton.isEnabled = true
-                updateButton.alpha = 1
+                updateButton.enable()
             } else {
-                updateButton.isEnabled = false
-                updateButton.alpha = 0.5
+                updateButton.disable()
             }
         }
     }
@@ -321,11 +320,20 @@ extension TodoDetailVC {
     }
     
     @objc private func handleUpdateTask() {
-        guard let name = taskNameTextField.text,
-            let notes = taskNotesTextField.text,
-            let documentID = self.todoItem?.documentID else { return }
-        let todoItem = TodoItem(name: name, notes: notes)
-        todoItem.documentID = documentID
+        
+        guard let todoItem = todoItem else {
+            Logger.log(reason: "Update task failed! There is no todo Item!")
+            return
+        }
+        
+        guard let name = taskNameTextField.text, let notes = taskNotesTextField.text else {
+            Logger.log(reason: "Required fields are nil! Update failed!")
+            return
+        }
+        
+        todoItem.name = name
+        todoItem.notes = notes
+        
         viewModel.updateTodoItem(todoItem)
     }
     
@@ -334,11 +342,11 @@ extension TodoDetailVC {
     }
     
     @objc private func handleDueDate() {
-//        view.addSubview(calenderView)
-//        calenderView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-//        calenderView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-//        calenderView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-//        calenderView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.5).isActive = true
+        //        view.addSubview(calenderView)
+        //        calenderView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+        //        calenderView.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+        //        calenderView.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+        //        calenderView.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: 0.5).isActive = true
     }
     
     @objc private func handleReminderDate() {
@@ -346,10 +354,32 @@ extension TodoDetailVC {
     }
     
     @objc private func handlePriority() {
-        let alertView = UIAlertController(title: "Choose Task Priority", message: "", preferredStyle: .actionSheet)
-//        alertView.addAction(UIAlertAction(title: "1", style: .default, handler: <#T##((UIAlertAction) -> Void)?##((UIAlertAction) -> Void)?##(UIAlertAction) -> Void#>))
+        let alertView = UIAlertController(title: "Choose Priority", message: "", preferredStyle: .actionSheet)
+        alertView.addAction(UIAlertAction(title: "High", style: .default) { (_) in
+            self.viewModel.taskPriority = .high
+            self.updateTaskPriority(.high)
+            self.priorityButton.setTitle(TaskPriority.high.getName(), for: .normal)
+        })
+        alertView.addAction(UIAlertAction(title: "Medium", style: .default) { (_) in
+            self.viewModel.taskPriority = .medium
+            self.updateTaskPriority(.medium)
+            self.priorityButton.setTitle(TaskPriority.medium.getName(), for: .normal)
+        })
+        alertView.addAction(UIAlertAction(title: "Low", style: .default) { (_) in
+            self.viewModel.taskPriority = .low
+            self.updateTaskPriority(.low)
+            self.priorityButton.setTitle(TaskPriority.low.getName(), for: .normal)
+        })
+        alertView.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        present(alertView, animated: true, completion: nil)
     }
-
+    
+    private func updateTaskPriority(_ priority: TaskPriority) {
+        guard todoItem != nil else { return }
+        guard self.todoItem.priority != priority else { return }
+        self.todoItem.priority = priority
+        updateButton.enable()
+    }
     
 }
 

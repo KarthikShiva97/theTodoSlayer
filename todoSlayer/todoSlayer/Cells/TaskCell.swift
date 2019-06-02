@@ -24,15 +24,22 @@ class TaskCell: UICollectionViewCell {
         return label
     }()
     
-    private lazy var completeButton: UIButton = {
+    private lazy var completeButton: RoundedCheckBoxButton = {
+        let button = RoundedCheckBoxButton()
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.isUserInteractionEnabled = false
+        button.borderWidth = 1.5
+        return button
+    }()
+    
+    private lazy var completeActionCaptureButton: UIButton = {
         let button = UIButton()
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(handleComplete), for: .touchUpInside)
-        button.layer.borderWidth = 1.5
-        button.layer.borderColor = #colorLiteral(red: 0.8156862745, green: 0.007843137255, blue: 0.1058823529, alpha: 1)
-        button.layer.cornerRadius = 12
         return button
     }()
+    
+    private var completeAction: ((RoundedCheckBoxButton)->())?
     
     override init(frame: CGRect) {
         super.init(frame: .zero)
@@ -48,6 +55,9 @@ class TaskCell: UICollectionViewCell {
     
     func configure(with todoItem: TodoItemListModel) {
         taskNameLabel.text = todoItem.name
+        completeButton.checkBoxColor = todoItem.completeButtonColor
+        completeButton.isChecked = todoItem.isCompleted
+        completeAction = todoItem.completeAction
     }
     
     private func setupLayout() {
@@ -65,9 +75,16 @@ class TaskCell: UICollectionViewCell {
             make.top.equalToSuperview().offset(TaskCell.topBottomPadding)
             make.bottom.equalToSuperview().offset(-TaskCell.topBottomPadding)
         }
+        
+        addSubview(completeActionCaptureButton)
+        completeActionCaptureButton.snp.makeConstraints { (make) in
+            make.leading.equalToSuperview()
+            make.top.bottom.equalToSuperview()
+            make.trailing.equalTo(taskNameLabel.snp.leading)
+        }
     }
     
     @objc private func handleComplete() {
-        print("Completed")
+        completeAction?(completeButton)
     }
 }

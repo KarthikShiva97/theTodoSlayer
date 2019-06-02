@@ -17,6 +17,7 @@
 		F03AB5F72284954E00E37B2E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5F62284954E00E37B2E /* Extensions.swift */; };
 		F03AB5F92284967200E37B2E /* TodoListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5F82284967200E37B2E /* TodoListViewModel.swift */; };
 		F03AB5FB2284971B00E37B2E /* TodoDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5FA2284971B00E37B2E /* TodoDetailVC.swift */; };
+		F060A5EC22A2F92E00B095B3 /* RoundedCheckBoxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = F060A5EB22A2F92E00B095B3 /* RoundedCheckBoxButton.swift */; };
 		F08EA8C0228FBB090003698B /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F08EA8BF228FBB090003698B /* GoogleService-Info.plist */; };
 		F08EA8C4228FC4210003698B /* FirebaseLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F08EA8C3228FC4210003698B /* FirebaseLayer.swift */; };
 		F08EA8C6228FC49E0003698B /* FirebaseLayer + todoItemEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F08EA8C5228FC49E0003698B /* FirebaseLayer + todoItemEntry.swift */; };
@@ -43,6 +44,7 @@
 		F03AB5F62284954E00E37B2E /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		F03AB5F82284967200E37B2E /* TodoListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListViewModel.swift; sourceTree = "<group>"; };
 		F03AB5FA2284971B00E37B2E /* TodoDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoDetailVC.swift; sourceTree = "<group>"; };
+		F060A5EB22A2F92E00B095B3 /* RoundedCheckBoxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RoundedCheckBoxButton.swift; path = todoSlayer/View/RoundedCheckBoxButton.swift; sourceTree = SOURCE_ROOT; };
 		F08EA8BF228FBB090003698B /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		F08EA8C3228FC4210003698B /* FirebaseLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseLayer.swift; sourceTree = "<group>"; };
 		F08EA8C5228FC49E0003698B /* FirebaseLayer + todoItemEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FirebaseLayer + todoItemEntry.swift"; sourceTree = "<group>"; };
@@ -120,6 +122,7 @@
 			isa = PBXGroup;
 			children = (
 				F010CBB6228835F500F2708A /* TaskCell.swift */,
+				F060A5EB22A2F92E00B095B3 /* RoundedCheckBoxButton.swift */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -323,6 +326,7 @@
 				F03AB5FB2284971B00E37B2E /* TodoDetailVC.swift in Sources */,
 				F09AC65E2287F753003DC091 /* TodoEntryViewModel.swift in Sources */,
 				F09AC66522880675003DC091 /* DatabaseRequirements.swift in Sources */,
+				F060A5EC22A2F92E00B095B3 /* RoundedCheckBoxButton.swift in Sources */,
 				F002A09B227ECF9E0018B679 /* AppDelegate.swift in Sources */,
 				F03AB5F72284954E00E37B2E /* Extensions.swift in Sources */,
 				F0EC17C7229A5D6200CFFDA5 /* Logger.swift in Sources */,
