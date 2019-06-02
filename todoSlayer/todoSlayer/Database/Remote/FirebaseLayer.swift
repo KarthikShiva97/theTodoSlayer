@@ -12,7 +12,9 @@ import FirebaseFirestore
 class FirebaseLayer {
     
     let firebase: Firestore = {
-        return Firestore.firestore()
+        let instance = Firestore.firestore()
+        //        instance.disableNetwork(completion: nil)
+        return instance
     }()
     weak var todoItemListViewDelegate: TodoItemListViewDbDelegate?
     

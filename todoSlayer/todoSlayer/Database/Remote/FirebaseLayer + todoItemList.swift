@@ -208,4 +208,8 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
         todoItemListPositionEventListener?.remove()
     }
     
+    func changeCompletionStatus(ForTodoItem todoItem: TodoItem) {
+        let pathToUpdate = firebase.document(pendingTasksPath + "/" + (todoItem.documentID))
+        pathToUpdate.updateData([TodoItem.Constants.isCompleted: todoItem.isCompleted])
+    }
 }

@@ -37,11 +37,13 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
     
     internal func createListPosition(forDocumentID documentID: String) {
         let path = firebase.document(listMetaPath)
-        path.updateData(["positions": FieldValue.arrayUnion([documentID]) ]) { (error) in
+        path.updateData([Constants.Meta.positions: FieldValue.arrayUnion([documentID]),
+                         Constants.Meta.lastOperation: ListOperation.add.rawValue,
+                         Constants.Meta.lastOperationMeta: NSNull()]) { (error) in
             guard error == nil else {
                 path.setData([Constants.Meta.positions: [documentID],
                               Constants.Meta.lastOperation: ListOperation.add.rawValue,
-                              Constants.Meta.lastOperationMeta: NSNull()], merge: true)
+                              Constants.Meta.lastOperationMeta: NSNull()], merge: false)
                 return
             }
         }

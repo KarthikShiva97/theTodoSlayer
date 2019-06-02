@@ -35,6 +35,13 @@ class TodoListVC: UIViewController {
         return view
     }()
     
+    private lazy var refreshControl: UIRefreshControl = {
+        let view = UIRefreshControl()
+        view.tintColor = .white
+        view.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        return view
+    }()
+    
     private lazy var collectionView: UICollectionView = {
         let flowLayout = UICollectionViewFlowLayout()
         flowLayout.scrollDirection = .vertical
@@ -44,6 +51,7 @@ class TodoListVC: UIViewController {
         cv.showsVerticalScrollIndicator = false
         cv.bounces = true
         cv.alwaysBounceVertical = true
+        cv.refreshControl = refreshControl
         
         cv.delegate = self
         cv.dataSource = self
@@ -133,6 +141,10 @@ extension TodoListVC {
         alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         present(alertController, animated: true, completion: nil)
     }
+    
+    @objc private func handleRefresh() {
+        viewModel.refresh()
+    }
 }
 
 // MARK:- Data Source
@@ -217,6 +229,10 @@ extension TodoListVC {
 } // extension ends ...
 
 extension TodoListVC: TodoListViewModelDelegate {
+    
+    func stopRefreshing() {
+        refreshControl.endRefreshing()
+    }
     
     func moveItem(at sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
         collectionView.moveItem(at: sourceIndexPath, to: destinationIndexPath)

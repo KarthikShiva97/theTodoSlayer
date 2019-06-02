@@ -18,6 +18,7 @@ struct TodoItemListModel {
 }
 
 protocol TodoListViewModelDelegate: class {
+    func stopRefreshing()
     func reloadAllItemsWithAnimation()
     func reloadAllItems()
     func appendItem(_ todoItem: TodoItem, atIndexPath indexPath: IndexPath)
@@ -69,6 +70,10 @@ class TodoListViewModel {
 // MARK:- Public API's
 extension TodoListViewModel {
     
+    func refresh() {
+        resetStateAndGetFreshData()
+    }
+    
     func moveItem(from source: IndexPath, to destination: IndexPath) {
         lastSourceIndex = source.row
         lastDestinationIndex = destination.row
@@ -97,15 +102,20 @@ extension TodoListViewModel {
     }
     
     func willEnterScreen() {
-        indexPathDocumentIDMap = [:]
-        documentIDTodoItemMap = [:]
-        remoteDatabase.todoItemListViewDelegate = self
-        getTodoItemsListPositions()
+        resetStateAndGetFreshData()
     }
     
     func didLeaveScreen() {
         remoteDatabase.clearLastPositionChanges()
         remoteDatabase.detachListener()
+    }
+    
+    private func resetStateAndGetFreshData() {
+        indexPathDocumentIDMap = [:]
+        documentIDTodoItemMap = [:]
+        delegate.reloadAllItems()
+        remoteDatabase.todoItemListViewDelegate = self
+        getTodoItemsListPositions()
     }
     
     private func getTodoItemsListPositions() {
@@ -126,6 +136,7 @@ extension TodoListViewModel {
             self.createDocumentIDTodoItemMap(todoItems: todoItems)
             self.remoteDatabase.attachListenerForTodoItemListPositions()
             self.remoteDatabase.attachListenerForAllTodoItems()
+            self.delegate.stopRefreshing()
             self.delegate.reloadAllItems()
         }
     }
@@ -137,7 +148,7 @@ extension TodoListViewModel {
         }
         
         guard let todoItem = documentIDTodoItemMap[documentID] else {
-            Logger.log(reason: "Cannot find Todo Item ID for Document ID \(documentID)")
+            Logger.log(reason: "Cannot find Todo Item for Document ID \(documentID)")
             return nil
         }
         return todoItem
@@ -169,6 +180,7 @@ extension TodoListViewModel {
         let completeAction: ((RoundedCheckBoxButton) -> ())? = { checkBox in
             checkBox.toggle()
             todoItem.isCompleted = checkBox.isChecked
+            self.remoteDatabase.changeCompletionStatus(ForTodoItem: todoItem)
         }
         
         return TodoItemListModel(name: todoItem.name,
@@ -202,7 +214,6 @@ extension TodoListViewModel: TodoItemListViewDbDelegate {
         
         // Insert document ID <-> Todo Item entry
         indexPathDocumentIDMap[indexPathToInsert] = newTodoItem.documentID
-        documentIDTodoItemMap[newTodoItem.documentID] = newTodoItem
         
         delegate.appendItem(newTodoItem, atIndexPath: indexPathToInsert)
         delegate.scrollToItem(atIndexPath: indexPathToScroll)
@@ -215,10 +226,24 @@ extension TodoListViewModel: TodoItemListViewDbDelegate {
     
     
     func todoItemListViewDbDelegate(didDeleteTodoItem deletedTodoItem: TodoItem) {
+        
         guard let indexPathToDelete = indexPathToDelete else {
             Logger.log(reason: "Did not receive indexPath to delete from remote!")
             return
         }
+        
+        guard let documentIDToBeDeleted = indexPathDocumentIDMap[indexPathToDelete] else {
+            Logger.log(reason: "Remote data does not align with local data! Getting fresh data from remote!")
+            resetStateAndGetFreshData()
+            return
+        }
+        
+        guard documentIDToBeDeleted == deletedTodoItem.documentID else {
+            Logger.log(reason: "Remote data does not align with local data! Getting fresh data from remote!")
+            resetStateAndGetFreshData()
+            return
+        }
+        
         documentIDTodoItemMap[deletedTodoItem.documentID] = nil
         delegate.deleteItem(atIndexPath: indexPathToDelete)
         self.indexPathToDelete = nil
