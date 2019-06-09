@@ -14,7 +14,7 @@ struct TodoItemListModel {
     let textColor: UIColor
     let completeButtonColor: UIColor
     let isCompleted: Bool
-    let completeAction: ((RoundedCheckBoxButton)->())?
+    let checkBoxAction: ((RoundedCheckBoxButton)->())?
 }
 
 protocol TodoListViewModelDelegate: class {
@@ -48,45 +48,57 @@ class TodoListViewModel {
         return FirebaseLayer()
     }()
     
-    private var todoItemsPositions = [String]() {
+    private let pendingTasks = TodoListVCModel(taskType: .pending)
+    private let completedTasks = TodoListVCModel(taskType: .completed)
+    
+    private var currentTaskDataSource: TodoListVCModel!
+    
+    private var currentTaskType: TaskType = .pending {
         didSet {
-            createIndexPathDocumentIDMap()
+            switch currentTaskType {
+            case .pending:
+                currentTaskDataSource = pendingTasks
+            case .completed:
+                currentTaskDataSource = completedTasks
+            }
+            delegate.reloadAllItems()
         }
     }
     
-    private var indexPathDocumentIDMap = [IndexPath: String]()
-    private var documentIDTodoItemMap = [String: TodoItem]()
-    
-    private var lastSourceIndex: Int = 0
-    private var lastDestinationIndex: Int = 0
-    
-    private var indexPathToDelete: IndexPath?
-    
     init(delegate: TodoListViewModelDelegate) {
         self.delegate = delegate
+        self.currentTaskDataSource = pendingTasks
     }
 }
 
 // MARK:- Public API's
 extension TodoListViewModel {
     
+    func setCurrentTaskType(to taskType: TaskType) {
+        guard taskType != currentTaskType else { return }
+        self.currentTaskType = taskType
+    }
+    
     func refresh() {
-        resetStateAndGetFreshData()
+        beginDataSetup()
     }
     
     func moveItem(from source: IndexPath, to destination: IndexPath) {
-        lastSourceIndex = source.row
-        lastDestinationIndex = destination.row
+        currentTaskDataSource.lastSourceIndex = source.row
+        currentTaskDataSource.lastDestinationIndex = destination.row
         
         let positionChange: [String: Int] = [PositionChange.from.rawValue: source.row,
                                              PositionChange.to.rawValue: destination.row]
         
         // Update the document ID position locally
-        let documentID = todoItemsPositions.remove(at: source.row)
-        todoItemsPositions.insert(documentID, at: destination.row)
+        let documentID = currentTaskDataSource.todoItemsPositions.remove(at: source.row)
+        currentTaskDataSource.todoItemsPositions.insert(documentID, at: destination.row)
         
         // Update Document Positions to Remote
-        remoteDatabase.updateTodoListPositions(positions: todoItemsPositions, positionChange: positionChange)
+        let positions = currentTaskDataSource.todoItemsPositions
+        remoteDatabase.updateTodoListPositions(positions: positions,
+                                               positionChange: positionChange,
+                                               taskType: currentTaskType)
     }
     
     func didSelectItem(atIndexPath indexPath: IndexPath) {
@@ -102,7 +114,7 @@ extension TodoListViewModel {
     }
     
     func willEnterScreen() {
-        resetStateAndGetFreshData()
+        beginDataSetup()
     }
     
     func didLeaveScreen() {
@@ -110,38 +122,51 @@ extension TodoListViewModel {
         remoteDatabase.detachListener()
     }
     
-    private func resetStateAndGetFreshData() {
-        indexPathDocumentIDMap = [:]
-        documentIDTodoItemMap = [:]
-        delegate.reloadAllItems()
+    private func beginDataSetup() {
         remoteDatabase.todoItemListViewDelegate = self
-        getTodoItemsListPositions()
+        TaskType.forEachDo {
+            self.remoteDatabase.attachListenerForTodoItemListPositions(for: $0)
+            self.remoteDatabase.attachListenerForAllTodoItems(for: $0)
+        }
+        TaskType.forEachDo { getTodoItemsListPositions(for: $0) }
     }
     
-    private func getTodoItemsListPositions() {
-        remoteDatabase.getTodoItemListPositions { [unowned self] (result) in
+    private func getTodoItemsListPositions(for taskType: TaskType) {
+        remoteDatabase.getTodoItemListPositions(for: taskType) { [unowned self] (result) in
+            
             guard let positions = try? result.get() else {
                 Logger.log(reason: "Todo Item positions are nil!")
                 return
             }
-            self.todoItemsPositions = positions
-            self.createIndexPathDocumentIDMap()
-            self.getAllTodoItems()
+            
+            let taskDataSource = self.getTaskDataSource(for: taskType)
+            taskDataSource.todoItemsPositions = positions
+            
+            self.getAllTodoItems(for: taskType)
+            
         }
     }
     
-    private func getAllTodoItems() {
-        remoteDatabase.getAllTodoItems { [unowned self] (result) in
+    private func getAllTodoItems(for taskType: TaskType) {
+        remoteDatabase.getAllTodoItems(for: taskType) { [unowned self] (result) in
+            
             let todoItems = try! result.get()
-            self.createDocumentIDTodoItemMap(todoItems: todoItems)
-            self.remoteDatabase.attachListenerForTodoItemListPositions()
-            self.remoteDatabase.attachListenerForAllTodoItems()
-            self.delegate.stopRefreshing()
-            self.delegate.reloadAllItems()
+            
+            let taskDataSource = self.getTaskDataSource(for: taskType)
+            taskDataSource.todoItems = todoItems
+            
+            self.invokeDelegateActionIfCurrentTaskType(is: taskType) {
+                $0.stopRefreshing()
+                $0.reloadAllItems()
+            }
         }
     }
     
     private func getTodoItem(atIndexPath indexPath: IndexPath) -> TodoItem? {
+        
+        let indexPathDocumentIDMap = currentTaskDataSource.indexPathDocumentIDMap
+        let documentIDTodoItemMap = currentTaskDataSource.documentIDTodoItemMap
+        
         guard let documentID = indexPathDocumentIDMap[indexPath] else {
             Logger.log(reason: "Cannot find document ID for IndexPath \(indexPath)")
             return nil
@@ -159,12 +184,12 @@ extension TodoListViewModel {
             Logger.log(reason: "Failed to remove item at IndexPath \(indexPath)")
             return
         }
-        documentIDTodoItemMap[documentID] = nil
+        currentTaskDataSource.deleteTodoItem(withDocumentID: documentID)
     }
     
     
     func getTotalCount() -> Int {
-        return documentIDTodoItemMap.values.count
+        return currentTaskDataSource.documentIDTodoItemMap.values.count
     }
     
     
@@ -177,121 +202,125 @@ extension TodoListViewModel {
         let textColor: UIColor = indexPath.row % 2 == 0 ? #colorLiteral(red: 0.5490196078, green: 0.7764705882, blue: 0.2901960784, alpha: 1) : #colorLiteral(red: 0.9647058824, green: 0.6901960784, blue: 0.0431372549, alpha: 1)
         let completeButtonColor = todoItem.priority.color
         
-        let completeAction: ((RoundedCheckBoxButton) -> ())? = { checkBox in
+        let checkBoxAction: ((RoundedCheckBoxButton) -> ())? = { checkBox in
+            
+            let currentList: TaskType = todoItem.isCompleted ? .completed: .pending
+            let newList: TaskType = currentList == .pending ? .completed : .pending
+            
             checkBox.toggle()
             todoItem.isCompleted = checkBox.isChecked
-            self.remoteDatabase.changeCompletionStatus(ForTodoItem: todoItem)
-            self.remoteDatabase.deleteTodoItem(todoItem, atIndex: indexPath.item)
-            self.remoteDatabase.saveTodoItem(todoItem, to: .completed)
-        }
+            
+            self.remoteDatabase.changeCompletionStatus(ForTodoItem: todoItem, at: currentList)
+            self.remoteDatabase.deleteTodoItem(todoItem, atIndex: indexPath.item, from: currentList) { (didComplete) in
+                self.remoteDatabase.saveTodoItem(todoItem, to: newList)
+            }
+            
+        } // checkBoxAction closure ends ...
         
         return TodoItemListModel(name: todoItem.name,
                                  textColor: textColor,
                                  completeButtonColor: completeButtonColor,
                                  isCompleted: todoItem.isCompleted,
-                                 completeAction: completeAction)
+                                 checkBoxAction: checkBoxAction)
     }
     
 }
 
 extension TodoListViewModel: TodoItemListViewDbDelegate {
     
-    func todoItemListViewDbDelegate(positions: [String]) {
-        self.todoItemsPositions = positions
-    }
-    
-    func todoItemPositionDidChange(from sourceIndex: Int, to destinationIndex: Int) {
-        if lastSourceIndex == sourceIndex && lastDestinationIndex == destinationIndex  { return }
+    func todoItemPositionDidChange(from sourceIndex: Int, to destinationIndex: Int,
+                                   taskType: TaskType) {
+        //        if lastSourceIndex == sourceIndex && lastDestinationIndex == destinationIndex  { return }
         let sourceIndexPath = IndexPath(row: sourceIndex, section: 0)
         let destinationIndexPath = IndexPath(row: destinationIndex, section: 0)
-        delegate.moveItem(at: sourceIndexPath, to: destinationIndexPath)
+        invokeDelegateActionIfCurrentTaskType(is: taskType) {
+            $0.moveItem(at: sourceIndexPath, to: destinationIndexPath)
+        }
     }
     
-    func todoItemListViewDbDelegate(didAddTodoItem newTodoItem: TodoItem) {
+    func todoItemListViewDbDelegate(positions: [String], taskType: TaskType) {
+        getTaskDataSource(for: taskType).todoItemsPositions = positions
+    }
+    
+    func todoItemListViewDbDelegate(didAddTodoItem newTodoItem: TodoItem, taskType: TaskType) {
         
-        documentIDTodoItemMap[newTodoItem.documentID] = newTodoItem
+        let taskDataSource = getTaskDataSource(for: taskType)
+        taskDataSource.documentIDTodoItemMap[newTodoItem.documentID] = newTodoItem
         
         let indexPathToInsert = IndexPath(item: getTotalCount() - 1, section: 0)
         let indexPathToScroll = IndexPath(item: getTotalCount() - 2, section: 0)
         
-        // Insert document ID <-> Todo Item entry
-        indexPathDocumentIDMap[indexPathToInsert] = newTodoItem.documentID
-        
-        delegate.appendItem(newTodoItem, atIndexPath: indexPathToInsert)
-        delegate.scrollToItem(atIndexPath: indexPathToScroll)
+        invokeDelegateActionIfCurrentTaskType(is: taskType) {
+            $0.appendItem(newTodoItem, atIndexPath: indexPathToInsert)
+            $0.scrollToItem(atIndexPath: indexPathToScroll)
+        }
     }
     
     
-    func didDeletePositionForTodoItem(atIndex index: Int) {
-        indexPathToDelete = IndexPath(row: index, section: 0)
+    func didDeletePositionForTodoItem(atIndex index: Int, taskType: TaskType) {
+        getTaskDataSource(for: taskType).indexPathToDelete = IndexPath(row: index, section: 0)
     }
     
     
-    func todoItemListViewDbDelegate(didDeleteTodoItem deletedTodoItem: TodoItem) {
+    func todoItemListViewDbDelegate(didDeleteTodoItem deletedTodoItem: TodoItem, taskType: TaskType) {
         
-        guard let indexPathToDelete = indexPathToDelete else {
-            Logger.log(reason: "Did not receive indexPath to delete from remote!")
+        let taskDataSource = getTaskDataSource(for: taskType)
+        taskDataSource.documentIDTodoItemMap[deletedTodoItem.documentID] = nil
+        
+        var indexPathToDelete: IndexPath!
+        
+        for (indexPath, documentID) in taskDataSource.indexPathDocumentIDMap {
+            guard documentID == deletedTodoItem.documentID else { continue }
+            indexPathToDelete = indexPath
+        }
+        
+        guard indexPathToDelete != nil else {
+            Logger.log(reason: "Delete failed! IndexPath to delete was not found! Reloading all items!")
+            delegate.reloadAllItems()
             return
         }
         
-//        guard let documentIDToBeDeleted = indexPathDocumentIDMap[indexPathToDelete] else {
-//            Logger.log(reason: "Remote data does not align with local data! Getting fresh data from remote!")
-//            resetStateAndGetFreshData()
-//            return
-//        }
-//
-//        guard documentIDToBeDeleted == deletedTodoItem.documentID else {
-//            Logger.log(reason: "Remote data does not align with local data! Getting fresh data from remote!")
-//            resetStateAndGetFreshData()
-//            return
-//        }
-        
-        documentIDTodoItemMap[deletedTodoItem.documentID] = nil
-        delegate.deleteItem(atIndexPath: indexPathToDelete)
-        self.indexPathToDelete = nil
+        invokeDelegateActionIfCurrentTaskType(is: taskType) {
+            $0.deleteItem(atIndexPath: indexPathToDelete)
+        }
     }
     
-    
-    func todoItemListViewDbDelegate(didUpdateTodoItem updatedTodoItem: TodoItem) {
-        documentIDTodoItemMap[updatedTodoItem.documentID] = updatedTodoItem
+    func todoItemListViewDbDelegate(didUpdateTodoItem updatedTodoItem: TodoItem, taskType: TaskType) {
+        
+        let taskDataSource = getTaskDataSource(for: taskType)
+        let todoItemsPositions = getTodoItemPositions(for: taskType)
+        
+        taskDataSource.documentIDTodoItemMap[updatedTodoItem.documentID] = updatedTodoItem
+        
         guard let indexForUpdatedTodoItem = todoItemsPositions.firstIndex(of: updatedTodoItem.documentID) else {
             Logger.log(reason: "Failed to update todoItem \(updatedTodoItem) !")
             return
         }
-        let indexPathToUpdate = IndexPath(row: indexForUpdatedTodoItem, section: 0)
-        delegate?.reloadItem(atIndexPath: indexPathToUpdate)
+        
+        invokeDelegateActionIfCurrentTaskType(is: taskType) {
+            let indexPathToUpdate = IndexPath(row: indexForUpdatedTodoItem, section: 0)
+            $0.reloadItem(atIndexPath: indexPathToUpdate)
+        }
     }
     
 }
 
+// MARK:- Helper Methods
 
 extension TodoListViewModel {
     
-    private func createIndexPathDocumentIDMap() {
-        
-        // Index Path Document ID map is created from todoItemPositions
-        // If the latter is empty, former should also be empty
-        guard self.todoItemsPositions.isEmpty == false else {
-            indexPathDocumentIDMap = [:]
-            return
-        }
-        
-        var indexPathDocumentIDMap = [IndexPath: String]()
-        
-        for index in 0...(todoItemsPositions.count - 1) {
-            let indexPath = IndexPath(row: index, section: 0)
-            let documentID = todoItemsPositions[index]
-            indexPathDocumentIDMap[indexPath] = documentID
-        }
-        
-        self.indexPathDocumentIDMap = indexPathDocumentIDMap
+    func getTaskDataSource(for taskType: TaskType) -> TodoListVCModel {
+        return taskType == .pending ? self.pendingTasks : self.completedTasks
     }
     
-    private func createDocumentIDTodoItemMap(todoItems: [TodoItem]) {
-        var documentIDTodoItemMap = [String: TodoItem]()
-        todoItems.forEach { (todoItem) in
-            documentIDTodoItemMap[todoItem.documentID] = todoItem
-        }
-        self.documentIDTodoItemMap = documentIDTodoItemMap
+    func invokeDelegateActionIfCurrentTaskType(is taskType: TaskType,
+                                               action: (TodoListViewModelDelegate) -> ()) {
+        guard taskType == currentTaskType else { return }
+        action(delegate)
     }
+    
+    func getTodoItemPositions(for taskType: TaskType) -> [String] {
+        return getTaskDataSource(for: taskType).todoItemsPositions
+    }
+    
 }

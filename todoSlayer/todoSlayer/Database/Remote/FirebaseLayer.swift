@@ -16,20 +16,26 @@ class FirebaseLayer {
         //        instance.disableNetwork(completion: nil)
         return instance
     }()
+    
     weak var todoItemListViewDelegate: TodoItemListViewDbDelegate?
     
     // MARK:- Constants
-    let pendingTasksPath = "list1/\(ListConstants.taskType)/\(ListConstants.TaskType.pending)"
-    let completedTasksPath = "list1/\(ListConstants.taskType)/\(ListConstants.TaskType.completed)"
-    let listMetaPath = "list1/\(ListConstants.meta)"
+    let pendingTasksPath = "list1/\(ListConstants.tasks)/\(ListConstants.TaskType.pending)"
+    let completedTasksPath = "list1/\(ListConstants.tasks)/\(ListConstants.TaskType.completed)"
+    
+    let pendingTasksMetaPath = "list1/\(ListConstants.meta)/\(ListConstants.TaskType.pending)/\(ListConstants.details)"
+    
+    let completedTasksMetaPath = "list1/\(ListConstants.meta)/\(ListConstants.TaskType.completed)/\(ListConstants.details)"
+    
 }
 
 // MARK:- Constants Storage
 extension FirebaseLayer {
     
     internal struct ListConstants {
-        static let taskType = "taskType"
+        static let tasks = "tasks"
         static let meta = "meta"
+        static let details = "details"
         
         struct Meta {
             static let lastOperation = "lastOperation"

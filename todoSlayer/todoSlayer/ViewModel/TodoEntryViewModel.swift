@@ -22,9 +22,17 @@ enum ListOperation: String {
     case reorder
 }
 
-enum TaskType {
+enum TaskType: CaseIterable {
     case pending
     case completed
+}
+
+extension TaskType {
+    static func forEachDo(_ closure: (TaskType)->()) {
+        TaskType.allCases.forEach { (taskType) in
+            closure(taskType)
+        }
+    }
 }
 
 enum TaskPriority: Int {
@@ -90,8 +98,10 @@ extension TodoEntryViewModel {
     }
     
     func deleteTodoItem(_ todoItem: TodoItem, atIndexPath indexPath: IndexPath) {
-        remoteDatabase.deleteTodoItem(todoItem, atIndex: indexPath.row)
-        delegate.didCompleteOperation(.delete)
+        remoteDatabase.deleteTodoItem(todoItem, atIndex: indexPath.row,
+                                      from: todoItem.taskType) { (didComplete) in
+            self.delegate.didCompleteOperation(.delete)
+        }
     }
     
     func updateTodoItem(_ todoItem: TodoItem) {

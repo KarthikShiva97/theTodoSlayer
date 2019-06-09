@@ -11,6 +11,7 @@
 		F002A09B227ECF9E0018B679 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F002A09A227ECF9E0018B679 /* AppDelegate.swift */; };
 		F002A09D227ECF9E0018B679 /* TodoListVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F002A09C227ECF9E0018B679 /* TodoListVC.swift */; };
 		F002A0A2227ECFA00018B679 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F002A0A1227ECFA00018B679 /* Assets.xcassets */; };
+		F008BB4E22AB81C500700CED /* TodoListVCModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F008BB4D22AB81C500700CED /* TodoListVCModel.swift */; };
 		F010CBB7228835F500F2708A /* TaskCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F010CBB6228835F500F2708A /* TaskCell.swift */; };
 		F010CBB922883F7E00F2708A /* RealmLayer + TodoItemList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F010CBB822883F7E00F2708A /* RealmLayer + TodoItemList.swift */; };
 		F03AB5F52284915300E37B2E /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5F42284915300E37B2E /* TodoItem.swift */; };
@@ -38,6 +39,7 @@
 		F002A09C227ECF9E0018B679 /* TodoListVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListVC.swift; sourceTree = "<group>"; };
 		F002A0A1227ECFA00018B679 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F002A0A6227ECFA00018B679 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F008BB4D22AB81C500700CED /* TodoListVCModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListVCModel.swift; sourceTree = "<group>"; };
 		F010CBB6228835F500F2708A /* TaskCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskCell.swift; sourceTree = "<group>"; };
 		F010CBB822883F7E00F2708A /* RealmLayer + TodoItemList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RealmLayer + TodoItemList.swift"; sourceTree = "<group>"; };
 		F03AB5F42284915300E37B2E /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
@@ -139,6 +141,7 @@
 		F03AB5F32284914200E37B2E /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				F008BB4D22AB81C500700CED /* TodoListVCModel.swift */,
 				F03AB5F42284915300E37B2E /* TodoItem.swift */,
 			);
 			path = Model;
@@ -325,6 +328,7 @@
 				F03AB5F52284915300E37B2E /* TodoItem.swift in Sources */,
 				F03AB5FB2284971B00E37B2E /* TodoDetailVC.swift in Sources */,
 				F09AC65E2287F753003DC091 /* TodoEntryViewModel.swift in Sources */,
+				F008BB4E22AB81C500700CED /* TodoListVCModel.swift in Sources */,
 				F09AC66522880675003DC091 /* DatabaseRequirements.swift in Sources */,
 				F060A5EC22A2F92E00B095B3 /* RoundedCheckBoxButton.swift in Sources */,
 				F002A09B227ECF9E0018B679 /* AppDelegate.swift in Sources */,

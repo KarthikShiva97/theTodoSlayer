@@ -39,7 +39,7 @@ class TaskCell: UICollectionViewCell {
         return button
     }()
     
-    private var completeAction: ((RoundedCheckBoxButton)->())?
+    private var checkBoxAction: ((RoundedCheckBoxButton)->())?
     
     override init(frame: CGRect) {
         super.init(frame: .zero)
@@ -57,7 +57,7 @@ class TaskCell: UICollectionViewCell {
         taskNameLabel.text = todoItem.name
         completeButton.checkBoxColor = todoItem.completeButtonColor
         completeButton.isChecked = todoItem.isCompleted
-        completeAction = todoItem.completeAction
+        checkBoxAction = todoItem.checkBoxAction
     }
     
     private func setupLayout() {
@@ -85,6 +85,6 @@ class TaskCell: UICollectionViewCell {
     }
     
     @objc private func handleComplete() {
-        completeAction?(completeButton)
+        checkBoxAction?(completeButton)
     }
 }

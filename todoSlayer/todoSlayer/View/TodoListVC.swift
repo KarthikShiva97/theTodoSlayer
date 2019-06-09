@@ -23,7 +23,7 @@ class TodoListVC: UIViewController {
         return btn
     }()
     
-    private let segmentedControl: UISegmentedControl = {
+    private lazy var segmentedControl: UISegmentedControl = {
         let view = UISegmentedControl(items: ["Pending", "Completed"])
         view.translatesAutoresizingMaskIntoConstraints = false
         view.selectedSegmentIndex = 0
@@ -32,6 +32,7 @@ class TodoListVC: UIViewController {
         view.setTitleTextAttributes(attributes, for: .normal)
         view.setTitleTextAttributes(attributes, for: .selected)
         view.tintColor = #colorLiteral(red: 0.1882352941, green: 0.1921568627, blue: 0.1960784314, alpha: 1)
+        view.addTarget(self, action: #selector(handleSegmentChange), for: .valueChanged)
         return view
     }()
     
@@ -81,10 +82,11 @@ class TodoListVC: UIViewController {
         setupSegmentedControl()
         setupCollectionView()
         setupNewTaskButton()
+        viewModel.willEnterScreen()
     }
     
     override func viewWillAppear(_ animated: Bool) {
-        viewModel.willEnterScreen()
+        
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -144,6 +146,11 @@ extension TodoListVC {
     
     @objc private func handleRefresh() {
         viewModel.refresh()
+    }
+    
+    @objc private func handleSegmentChange() {
+        let newTaskType: TaskType = segmentedControl.selectedSegmentIndex == 0 ? .pending : .completed
+        viewModel.setCurrentTaskType(to: newTaskType)
     }
 }
 

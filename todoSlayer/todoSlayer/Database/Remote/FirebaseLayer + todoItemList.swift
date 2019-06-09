@@ -13,15 +13,19 @@ import FirebaseFirestore
 fileprivate var allTodoItemsEventListener: ListenerRegistration!
 fileprivate var todoItemListPositionEventListener: ListenerRegistration!
 
-fileprivate var isInitialTodoItemsFetch = true
-fileprivate var isInitialListViewPositionsFetch = true
+// This is used for blocking off initial data that these listeners provide
+// This is released as soon as the count goes above 1 (one for pending (0) and one for completed (1) )
+fileprivate var todoItemListenerCount = 0
+fileprivate var positionsListenerCount = 0
 
 extension FirebaseLayer: TodoItemListViewDbAPI {
     
-    func getTodoItemListPositions(onCompletion: @escaping (Result<[String], TodoItemListViewDbAPIError>)->()) {
+    func getTodoItemListPositions(for taskType: TaskType, onCompletion: @escaping (Result<[String], TodoItemListViewDbAPIError>)->()) {
         
-        let path = firebase.document(listMetaPath)
-        path.getDocument { (snapshot, error) in
+        let path = taskType == .pending ? pendingTasksMetaPath : completedTasksMetaPath
+        let fullPath = firebase.document(path)
+        
+        fullPath.getDocument { (snapshot, error) in
             
             let errorMsg = "Failed to get to-do item list positions!"
             
@@ -45,9 +49,12 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
         
     }
     
-    func getAllTodoItems(onCompletion: @escaping (Result<[TodoItem], TodoItemListViewDbAPIError>)->()) {
-        let path = firebase.collection(pendingTasksPath)
-        path.getDocuments { (snapshot, error) in
+    func getAllTodoItems(for taskType: TaskType, onCompletion: @escaping (Result<[TodoItem], TodoItemListViewDbAPIError>)->()) {
+        
+        let path = taskType == .pending ? pendingTasksPath : completedTasksPath
+        let fullPath = firebase.collection(path)
+        
+        fullPath.getDocuments { (snapshot, error) in
             
             let errorMsg = "Failed to get to-do items!"
             
@@ -71,11 +78,13 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
     }
     
     
-    func attachListenerForAllTodoItems() {
+    func attachListenerForAllTodoItems(for taskType: TaskType) {
         
-        isInitialTodoItemsFetch = true
+        todoItemListenerCount = 0
         
-        let pathToListen = firebase.collection(pendingTasksPath)
+        let path = taskType == .pending ? pendingTasksPath : completedTasksPath
+        let pathToListen = firebase.collection(path)
+        
         allTodoItemsEventListener = pathToListen.addSnapshotListener { (snapshot, error) in
             
             if let error = error {
@@ -88,8 +97,8 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                 return
             }
             
-            guard isInitialTodoItemsFetch == false else {
-                isInitialTodoItemsFetch = false
+            guard todoItemListenerCount > 1 else {
+                todoItemListenerCount += 1
                 return
             }
             
@@ -101,15 +110,15 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                 }
                 
                 if change.type == .added {
-                    self.todoItemListViewDelegate?.todoItemListViewDbDelegate(didAddTodoItem: todoItem)
+                    self.todoItemListViewDelegate?.todoItemListViewDbDelegate(didAddTodoItem: todoItem, taskType: taskType)
                 }
                 
                 if change.type == .removed {
-                    self.todoItemListViewDelegate?.todoItemListViewDbDelegate(didDeleteTodoItem: todoItem)
+                    self.todoItemListViewDelegate?.todoItemListViewDbDelegate(didDeleteTodoItem: todoItem, taskType: taskType)
                 }
                 
                 if change.type == .modified {
-                    self.todoItemListViewDelegate?.todoItemListViewDbDelegate(didUpdateTodoItem: todoItem)
+                    self.todoItemListViewDelegate?.todoItemListViewDbDelegate(didUpdateTodoItem: todoItem, taskType: taskType)
                 }
                 
             }
@@ -117,15 +126,17 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
     }
     
     #warning("Refactor this function!")
-    func attachListenerForTodoItemListPositions() {
+    func attachListenerForTodoItemListPositions(for taskType: TaskType) {
         
-        isInitialListViewPositionsFetch = true
+        positionsListenerCount = 0
         
-        let pathToListen = firebase.document(listMetaPath)
+        let path = taskType == .pending ? pendingTasksMetaPath : completedTasksMetaPath
+        let pathToListen = firebase.document(path)
+        
         todoItemListPositionEventListener = pathToListen.addSnapshotListener() { (snapshot, error) in
             
-            guard isInitialListViewPositionsFetch == false else {
-                isInitialListViewPositionsFetch = false
+            guard positionsListenerCount > 1 else {
+                positionsListenerCount += 1
                 return
             }
             
@@ -154,7 +165,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                 return
             }
             
-            self.todoItemListViewDelegate?.todoItemListViewDbDelegate(positions: positions)
+            self.todoItemListViewDelegate?.todoItemListViewDbDelegate(positions: positions, taskType: taskType)
             
             guard [ListOperation.delete, ListOperation.reorder].contains(lastOperation) else { return }
             
@@ -169,7 +180,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                     Logger.log(reason: "Failed to get last removed index position!")
                     return
                 }
-                self.todoItemListViewDelegate?.didDeletePositionForTodoItem(atIndex: lastRemovedIndex)
+                self.todoItemListViewDelegate?.didDeletePositionForTodoItem(atIndex: lastRemovedIndex, taskType: taskType)
                 return
             }
             
@@ -184,15 +195,18 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                     return
             }
             
-            self.todoItemListViewDelegate?.todoItemPositionDidChange(from: fromIndex, to: toIndex)
+            self.todoItemListViewDelegate?.todoItemPositionDidChange(from: fromIndex, to: toIndex, taskType: taskType)
             return
             
         }
         
     }
     
-    func updateTodoListPositions(positions: [String], positionChange: [String: Int]) {
-        let pathToUpdate = firebase.document(listMetaPath)
+    func updateTodoListPositions(positions: [String], positionChange: [String: Int],
+                                 taskType: TaskType) {
+        
+        let path = taskType == .pending ? pendingTasksMetaPath : completedTasksMetaPath
+        let pathToUpdate = firebase.document(path)
         pathToUpdate.setData([ListConstants.Meta.positions: positions,
                               ListConstants.Meta.lastOperation: ListOperation.reorder.rawValue,
                               ListConstants.Meta.lastOperationMeta: positionChange])
@@ -204,12 +218,13 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
     }
     
     func detachListener() {
-        allTodoItemsEventListener?.remove()
-        todoItemListPositionEventListener?.remove()
+        //        allTodoItemsEventListener?.remove()
+        //        todoItemListPositionEventListener?.remove()
     }
     
-    func changeCompletionStatus(ForTodoItem todoItem: TodoItem) {
-        let pathToUpdate = firebase.document(pendingTasksPath + "/" + (todoItem.documentID))
+    func changeCompletionStatus(ForTodoItem todoItem: TodoItem, at taskType: TaskType) {
+        let path = taskType == .completed ? completedTasksPath : pendingTasksPath
+        let pathToUpdate = firebase.document(path + "/" + (todoItem.documentID))
         pathToUpdate.updateData([TodoItem.Constants.isCompleted: todoItem.isCompleted])
     }
 }

@@ -16,6 +16,10 @@ class TodoItem {
     var priority: TaskPriority
     var isCompleted: Bool
     
+    var taskType: TaskType {
+        return isCompleted ? .completed : .pending
+    }
+    
     // MARK:- Creating Locally
     init(name: String, notes: String, priority: TaskPriority) {
         self.ID = UUID().uuidString
