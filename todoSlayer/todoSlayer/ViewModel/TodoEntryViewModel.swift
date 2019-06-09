@@ -87,27 +87,43 @@ class TodoEntryViewModel {
 
 // MARK:- Public API's
 extension TodoEntryViewModel {
+    
     func addTodoItem() {
+        
         guard let taskName = taskName, self.taskName?.isEmpty == false else {
             delegate?.handleFailure(.taskNameMissing)
             return
         }
+        
+        let onCompletion: ((Bool) -> ()) = { didComplete in
+            self.delegate?.didCompleteOperation(.add)
+        }
+        
         let todoItem = TodoItem(name: taskName, notes: taskNotes, priority: taskPriority)
-        remoteDatabase.saveTodoItem(todoItem, to: .pending)
-        delegate.didCompleteOperation(.add)
+        remoteDatabase.saveTodoItem(todoItem, to: .pending, execute: .operation(onCompletion))
+        
     }
     
     func deleteTodoItem(_ todoItem: TodoItem, atIndexPath indexPath: IndexPath) {
-        remoteDatabase.deleteTodoItem(todoItem, atIndex: indexPath.row,
-                                      from: todoItem.taskType) { (didComplete) in
-            self.delegate.didCompleteOperation(.delete)
+        
+        let index = indexPath.row
+        let taskType = todoItem.taskType
+        
+        let onCompletion: ((Bool) -> ()) = { didComplete in
+            self.delegate?.didCompleteOperation(.delete)
         }
+        
+        remoteDatabase.deleteTodoItem(todoItem, atIndex: index,
+                                      from: taskType,
+                                      execute: .operation(onCompletion))
+        
     }
     
     func updateTodoItem(_ todoItem: TodoItem) {
         remoteDatabase.updateTodoItem(todoItem)
-        delegate.didCompleteOperation(.update)
+        delegate?.didCompleteOperation(.update)
     }
+    
 }
 
 private extension TodoEntryViewModel {

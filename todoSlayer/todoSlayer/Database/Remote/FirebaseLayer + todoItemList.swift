@@ -222,9 +222,30 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
         //        todoItemListPositionEventListener?.remove()
     }
     
-    func changeCompletionStatus(ForTodoItem todoItem: TodoItem, at taskType: TaskType) {
+    func changeCompletionStatus(ForTodoItem todoItem: TodoItem, at taskType: TaskType, batch: WriteBatch) {
         let path = taskType == .completed ? completedTasksPath : pendingTasksPath
         let pathToUpdate = firebase.document(path + "/" + (todoItem.documentID))
-        pathToUpdate.updateData([TodoItem.Constants.isCompleted: todoItem.isCompleted])
+        let updatedData = [TodoItem.Constants.isCompleted: todoItem.isCompleted]
+        batch.updateData(updatedData, forDocument: pathToUpdate)
     }
+    
+    func moveTodoItem(todoItem: TodoItem, currentTaskType: TaskType,
+                      newTaskType: TaskType, index: Int, onCompletion: didComplete) {
+        
+        let batch = firebase.batch()
+        
+        changeCompletionStatus(ForTodoItem: todoItem, at: currentTaskType, batch: batch)
+        
+        deleteTodoItem(todoItem, atIndex: index, from: currentTaskType, execute: .syncBatchWrite(batch))
+        
+        saveTodoItem(todoItem, to: newTaskType, execute: .asyncBatchWrite(batch, { (writternBatch) in
+            batch.commit { (error) in
+                guard error == nil else { onCompletion?(false); return }
+                onCompletion?(true)
+                return
+            }
+        }))
+        
+    } // moveTodoItem func ends ...
+    
 }

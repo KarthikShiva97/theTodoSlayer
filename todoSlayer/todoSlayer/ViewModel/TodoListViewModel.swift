@@ -204,16 +204,15 @@ extension TodoListViewModel {
         
         let checkBoxAction: ((RoundedCheckBoxButton) -> ())? = { checkBox in
             
-            let currentList: TaskType = todoItem.isCompleted ? .completed: .pending
-            let newList: TaskType = currentList == .pending ? .completed : .pending
+            let currentTaskType: TaskType = todoItem.isCompleted ? .completed: .pending
+            let newTaskType: TaskType = currentTaskType == .pending ? .completed : .pending
             
             checkBox.toggle()
             todoItem.isCompleted = checkBox.isChecked
             
-            self.remoteDatabase.changeCompletionStatus(ForTodoItem: todoItem, at: currentList)
-            self.remoteDatabase.deleteTodoItem(todoItem, atIndex: indexPath.item, from: currentList) { (didComplete) in
-                self.remoteDatabase.saveTodoItem(todoItem, to: newList)
-            }
+            self.remoteDatabase.moveTodoItem(todoItem: todoItem,
+                                             currentTaskType: currentTaskType,
+                                             newTaskType: newTaskType, index: indexPath.row, onCompletion: nil)
             
         } // checkBoxAction closure ends ...
         

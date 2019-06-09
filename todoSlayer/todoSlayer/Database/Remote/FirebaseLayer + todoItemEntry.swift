@@ -9,7 +9,14 @@
 import Foundation
 import FirebaseFirestore
 
-typealias didComplete = ((Bool) -> ())
+enum Execute {
+    case operation(didComplete)
+    case syncBatchWrite(WriteBatch)
+    case asyncBatchWrite(WriteBatch, didCompleteBatchWrite)
+}
+
+typealias didCompleteBatchWrite = ((WriteBatch) -> ())?
+typealias didComplete = ((Bool) -> ())?
 
 //TODO:- Create Objects all the raw strings below
 
@@ -17,49 +24,104 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
     
     fileprivate typealias Constants = ListConstants
     
-    func saveTodoItem(_ todoItem: TodoItem, to taskType: TaskType) {
+    func saveTodoItem(_ todoItem: TodoItem, to taskType: TaskType, execute: Execute) {
+        
+        var batch: WriteBatch!
+        var operationCompletionClosure: didComplete = nil
+        var asyncBatchWriteCompletionClosure: didCompleteBatchWrite = nil
+        
+        switch execute {
+            
+        case .operation(let completionClosure):
+            operationCompletionClosure = completionClosure
+            batch = firebase.batch()
+            
+        case .syncBatchWrite(let batchReceived):
+            operationCompletionClosure = nil
+            asyncBatchWriteCompletionClosure = nil
+            fatalError("Cannot perfrom Sync Batch Write!")
+            
+        case .asyncBatchWrite(let batchReceived, let completionClosure):
+            asyncBatchWriteCompletionClosure = completionClosure
+            batch = batchReceived
+            
+        }
         
         let taskPath = taskType == .pending ? pendingTasksPath : completedTasksPath
-        let documentPath =  firebase.collection(taskPath).document()
-        let documentID = documentPath.documentID
+        let newTodoItemdocumentPath =  firebase.collection(taskPath).document()
+        let documentID = newTodoItemdocumentPath.documentID
         
         todoItem.setDocumentID(documentID)
         
         checkIfListPositionExists(for: taskType) { (exists) in
+            
             if exists {
-                self.addListPosition(forDocumentID: documentID, for: taskType)
+                self.addListPosition(forDocumentID: documentID, for: taskType, batch: batch)
             } else {
-                self.createListPosition(forDocumentID: documentID, for: taskType)
+                self.createListPosition(forDocumentID: documentID, for: taskType, batch: batch)
             }
+            
             let data = todoItem.json
-            documentPath.setData(data)
-        }
+            batch.setData(data, forDocument: newTodoItemdocumentPath)
+            
+            // Handling Execution
+            
+            if case .asyncBatchWrite(_, _)  = execute {
+                asyncBatchWriteCompletionClosure!(batch)
+                return
+            }
+            
+            // If it should be executed now, execute and call the completion handler
+            guard case .operation(_) = execute else { return }
+            
+            batch.commit(completion: { (error) in
+                guard error == nil else { operationCompletionClosure!(false); return }
+                operationCompletionClosure!(true)
+                return
+            })
+            
+        } // checkIfListPositionExists closure ends ...
         
     }
     
-    func deleteTodoItem(_ todoItem: TodoItem, atIndex index: Int,
-                        from taskType: TaskType,
-                        onCompletion: @escaping didComplete) {
+    func deleteTodoItem(_ todoItem: TodoItem, atIndex index: Int, from taskType: TaskType,
+                        execute: Execute) {
+        
+        
+        var batch: WriteBatch!
+        var onCompletion: didComplete
+        
+        switch execute {
+            
+        case .operation(let completionClosure):
+            onCompletion = completionClosure
+            batch = firebase.batch()
+            
+        case .syncBatchWrite(let batchReceived):
+            onCompletion = nil
+            batch = batchReceived
+            
+        default: fatalError("oops!")
+            
+        }
         
         let pathToDelete = taskType == .pending ? pendingTasksPath : completedTasksPath
+        let todoItemPathRef = self.firebase.collection(pathToDelete).document(todoItem.documentID)
         
-        deleteListPosition(forDocumentID: todoItem.documentID, atIndex: index,
-                           taskType: taskType) { (didComplete) in
-            
-            guard didComplete == true else {
-                Logger.log(reason: "Delete failed! Could not delete list position for \(todoItem) !")
-                return onCompletion(false)
-            }
-            
-            self.firebase.collection(pathToDelete).document(todoItem.documentID).delete(completion: { (error) in
-                guard error == nil else {
-                    Logger.log(reason: "Delete failed! Could not delete \(todoItem) !")
-                    return onCompletion(false)
-                }
-                return onCompletion(true)
-            })
-            
-        } // deleteListPosition 
+        
+        deleteListPosition(forDocumentID: todoItem.documentID, atIndex: index, taskType: taskType, batch: batch)
+        batch.deleteDocument(todoItemPathRef)
+        
+        
+        // If it should be executed now, execute and call the completion handler
+        guard case .operation(_) = execute else { return }
+        
+        
+        batch.commit { (error) in
+            guard error == nil else { onCompletion!(false); return }
+            onCompletion!(true)
+            return
+        }
         
     } // deleteTodoItem func ends ...
     
@@ -78,39 +140,39 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
         }
     }
     
-    func createListPosition(forDocumentID documentID: String, for taskType: TaskType) {
+    func createListPosition(forDocumentID documentID: String, for taskType: TaskType, batch: WriteBatch) {
         let path = getMetaPath(for: taskType)
         let fullPath = firebase.document(path)
-        fullPath.setData([Constants.Meta.positions: [documentID],
-                          Constants.Meta.lastOperation: ListOperation.add.rawValue,
-                          Constants.Meta.lastOperationMeta: NSNull()], merge: true)
+        let newData = [Constants.Meta.positions: [documentID],
+                       Constants.Meta.lastOperation: ListOperation.add.rawValue,
+                       Constants.Meta.lastOperationMeta: NSNull()] as [String : Any]
+        
+        batch.setData(newData, forDocument: fullPath)
     }
     
-    func addListPosition(forDocumentID documentID: String, for taskType: TaskType){
+    func addListPosition(forDocumentID documentID: String, for taskType: TaskType, batch: WriteBatch){
         let path = getMetaPath(for: taskType)
         let fullPath = firebase.document(path)
-        fullPath.updateData([Constants.Meta.positions: FieldValue.arrayUnion([documentID]),
-                             Constants.Meta.lastOperation: ListOperation.add.rawValue,
-                             Constants.Meta.lastOperationMeta: NSNull()])
+        let newData  = ([Constants.Meta.positions: FieldValue.arrayUnion([documentID]),
+                         Constants.Meta.lastOperation: ListOperation.add.rawValue,
+                         Constants.Meta.lastOperationMeta: NSNull()] as [String : Any])
+        batch.updateData(newData, forDocument: fullPath)
     }
     
     internal func deleteListPosition(forDocumentID documentID: String,
                                      atIndex index: Int,
                                      taskType: TaskType,
-                                     onCompletion: @escaping (Bool) -> ()) {
+                                     batch: WriteBatch) {
         
-        let path = getMetaPath(for: taskType)
-        let fullPath = firebase.document(path)
+        // 1) Remove its position from List Meta
+        let metaPathRef = firebase.document(getMetaPath(for: taskType))
         let lastOperationMeta = [Constants.Meta.LastOperationMeta.lastRemovedIndex: index]
         let updatedData =
             [Constants.Meta.positions: FieldValue.arrayRemove([documentID]),
              Constants.Meta.lastOperation: ListOperation.delete.rawValue,
              Constants.Meta.lastOperationMeta: lastOperationMeta] as [String : Any]
         
-        fullPath.updateData(updatedData) { (error) in
-            guard error == nil else { return onCompletion(false) }
-            onCompletion(true)
-        }
+        batch.updateData(updatedData, forDocument: metaPathRef)
         
     } // deleteListPosition func ends ....
     

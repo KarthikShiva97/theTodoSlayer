@@ -7,19 +7,21 @@
 //
 
 import Foundation
+import Firebase
+import FirebaseFirestore
 
 typealias DatabaseRequirements = TodoItemDetailViewDbAPI
 
 protocol TodoItemDetailViewDbAPI {
     
-    func saveTodoItem(_ todoItem: TodoItem, to taskType: TaskType)
+    func saveTodoItem(_ todoItem: TodoItem, to taskType: TaskType, execute: Execute)
     
     func deleteTodoItem(_ todoItem: TodoItem, atIndex index: Int, from taskType: TaskType,
-                        onCompletion: @escaping didComplete)
+                        execute: Execute)
     
     func updateTodoItem(_ todoItem: TodoItem)
     
-    func createListPosition(forDocumentID documentID: String, for taskType: TaskType)
+    func createListPosition(forDocumentID documentID: String, for taskType: TaskType, batch: WriteBatch)
     
     func updateTodoListPositions(positions: [String], positionChange: [String: Int],
                                  taskType: TaskType)
