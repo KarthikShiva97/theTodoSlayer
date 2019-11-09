@@ -7,6 +7,11 @@
 //
 
 import Foundation
+import Firebase
+
+enum TodoItemSection {
+    case zero
+}
 
 class TodoItem {
     let ID: String
@@ -15,18 +20,20 @@ class TodoItem {
     var notes: String
     var priority: TaskPriority
     var isCompleted: Bool
+    var reminderDateTime: String?
     
     var taskType: TaskType {
         return isCompleted ? .completed : .pending
     }
     
     // MARK:- Creating Locally
-    init(name: String, notes: String, priority: TaskPriority) {
+    init(name: String, notes: String, priority: TaskPriority, reminderDateTime: String?) {
         self.ID = UUID().uuidString
         self.name = name
         self.notes = notes
         self.priority = priority
         self.isCompleted = false
+        self.reminderDateTime = nil
     }
     
     // MARK:- Reconstructing from JSON
@@ -36,7 +43,8 @@ class TodoItem {
             let notes = json[Constants.notes] as? String,
             let documentID = json[Constants.documentID] as? String,
             let priority =  TaskPriority(rawValue: json[Constants.priority] as? Int ?? -1),
-            let isCompleted = json[Constants.isCompleted] as? Bool else {
+            let isCompleted = json[Constants.isCompleted] as? Bool ,
+            let reminderDateTime = json[Constants.reminderDateTime] as? String else {
                 print("Failed to convert JSON to Todo Item! JSON -> \(json)")
                 return nil
         }
@@ -46,6 +54,7 @@ class TodoItem {
         self.notes = notes
         self.priority = priority
         self.isCompleted = isCompleted
+        self.reminderDateTime = reminderDateTime
     }
     
     struct Constants {
@@ -55,6 +64,13 @@ class TodoItem {
         static let notes = "notes"
         static let priority = "priority"
         static let isCompleted = "isCompleted"
+        static let reminderDateTime = "reminderDateTime"
+    }
+}
+
+extension TodoItem : Equatable {
+    static func == (lhs: TodoItem, rhs: TodoItem) -> Bool {
+        return lhs.ID == rhs.ID
     }
 }
 
@@ -67,18 +83,30 @@ extension TodoItem {
 
 extension TodoItem {
     var json: [String: Any] {
-        return [ TodoItem.Constants.ID: ID,
-                 TodoItem.Constants.name: name,
-                 TodoItem.Constants.notes: notes,
-                 TodoItem.Constants.documentID: documentID,
-                 TodoItem.Constants.priority: priority.rawValue,
-                 TodoItem.Constants.isCompleted: isCompleted ]
+        let jsonArray: [String : Any] = [
+            TodoItem.Constants.ID: ID,
+            TodoItem.Constants.name: name,
+            TodoItem.Constants.notes: notes,
+            TodoItem.Constants.documentID: documentID,
+            TodoItem.Constants.priority: priority.rawValue,
+            TodoItem.Constants.isCompleted: isCompleted,
+            TodoItem.Constants.reminderDateTime: reminderDateTime as Any]
+        return jsonArray.filter { (key, value) -> Bool in
+            return jsonArray[key] != nil
+        }
     }
 }
 
 
 extension TodoItem: CustomDebugStringConvertible {
     var debugDescription: String {
-        return "NAME:-> \(name)"
+        return
+        """
+        NAME:-> \(name)
+        DocumentID: -> \(documentID)
+        Priority:-> \(priority)
+        isCompleted:-> \(isCompleted)
+        ReminderDateTime:-> \(reminderDateTime)
+        """
     }
 }

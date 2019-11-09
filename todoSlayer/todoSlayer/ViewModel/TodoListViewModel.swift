@@ -8,25 +8,35 @@
 
 import Foundation
 import UIKit
+import MobileCoreServices
 
-struct TodoItemListModel {
+struct TodoItemListModel: Hashable {
+    let ID: String
     let name: String
     let textColor: UIColor
     let completeButtonColor: UIColor
     let isCompleted: Bool
     let checkBoxAction: ((RoundedCheckBoxButton)->())?
+    
+    static func == (lhs: TodoItemListModel, rhs: TodoItemListModel) -> Bool {
+        return (lhs.ID == rhs.ID) &&
+            (lhs.name == rhs.name) &&
+            (lhs.completeButtonColor == rhs.completeButtonColor)
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(ID)
+    }
+    
 }
 
 protocol TodoListViewModelDelegate: class {
+    var dataSource: UICollectionViewDiffableDataSource<TodoItemSection, TodoItemListModel> { get set }
     func stopRefreshing()
-    func reloadAllItemsWithAnimation()
-    func reloadAllItems()
-    func appendItem(_ todoItem: TodoItem, atIndexPath indexPath: IndexPath)
-    func deleteItem(atIndexPath indexPath: IndexPath)
-    func reloadItem(atIndexPath indexPath: IndexPath)
     func scrollToItem(atIndexPath indexPath: IndexPath)
     func openTodoDetailVC(withMode mode: TodoDetailVC.Mode)
-    func moveItem(at sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath)
+    func showLoading()
+    func hideLoading()
 }
 
 enum PositionChange: String {
@@ -38,6 +48,12 @@ enum TodoItemListViewDbAPIError: Error {
     case typecastFailed
     case nilSnapshot
     case generalError(Error)
+}
+
+enum SortOption {
+    case name
+    case priority
+    case manual
 }
 
 class TodoListViewModel {
@@ -61,7 +77,7 @@ class TodoListViewModel {
             case .completed:
                 currentTaskDataSource = completedTasks
             }
-            delegate.reloadAllItems()
+            loadData(shouldAnimate: false)
         }
     }
     
@@ -74,6 +90,38 @@ class TodoListViewModel {
 // MARK:- Public API's
 extension TodoListViewModel {
     
+//    var shouldShowLoading() {
+//
+//    }
+    
+    func sortBy(_ sortOption: SortOption) {
+        var newTodoItemPositions = [String]()
+        
+        switch sortOption {
+            
+        case .name:
+            newTodoItemPositions = currentTaskDataSource.todoItems.sorted {
+                $0.name < $1.name
+            }.map { $0.documentID }
+            
+        case .priority:
+            newTodoItemPositions = currentTaskDataSource.todoItems.sorted {
+                $0.priority.rawValue < $1.priority.rawValue
+            }.map { $0.documentID }
+            
+        default:
+            Logger.log(reason: "unknown sort order!")
+            
+        }
+        
+        currentTaskDataSource.todoItemsPositions = newTodoItemPositions
+        currentTaskDataSource.sortByPosition()
+        loadData(shouldAnimate: true)
+        
+        remoteDatabase.updateTodoListPositions(positions: currentTaskDataSource.todoItemsPositions,
+                                               taskType: currentTaskType)
+    }
+    
     func setCurrentTaskType(to taskType: TaskType) {
         guard taskType != currentTaskType else { return }
         self.currentTaskType = taskType
@@ -81,6 +129,18 @@ extension TodoListViewModel {
     
     func refresh() {
         beginDataSetup()
+    }
+    
+    func getDragItem(atIndexPath indexPath: IndexPath) -> [UIDragItem] {
+        let todoItem = currentTaskDataSource.todoItems[indexPath.item]
+        let itemProvider = NSItemProvider()
+        itemProvider.registerDataRepresentation(forTypeIdentifier: kUTTypePlainText as String, visibility: .all) {
+            completion in
+            let data = todoItem.name.data(using: .utf8)
+            completion(data, nil)
+            return nil
+        }
+        return [UIDragItem(itemProvider: itemProvider)]
     }
     
     func moveItem(from source: IndexPath, to destination: IndexPath) {
@@ -99,13 +159,13 @@ extension TodoListViewModel {
         remoteDatabase.updateTodoListPositions(positions: positions,
                                                positionChange: positionChange,
                                                taskType: currentTaskType)
+        
+        currentTaskDataSource.sortByPosition()
+        
     }
     
     func didSelectItem(atIndexPath indexPath: IndexPath) {
-        guard let todoItem = getTodoItem(atIndexPath: indexPath) else {
-            Logger.log(reason: "Cannot show detail view for todo Item at \(indexPath) !")
-            return
-        }
+        let todoItem = currentTaskDataSource.todoItems[indexPath.item]
         delegate?.openTodoDetailVC(withMode: .existingTodoItem(todoItem, indexPath))
     }
     
@@ -113,7 +173,13 @@ extension TodoListViewModel {
         delegate?.openTodoDetailVC(withMode: .newTodoItem)
     }
     
-    func willEnterScreen() {
+    
+    func getTodoItemName(atIndexPath indexPath: IndexPath) -> String {
+        return currentTaskDataSource.todoItems[indexPath.item].name
+    }
+    
+    
+    func screenDidLoad() {
         beginDataSetup()
     }
     
@@ -122,7 +188,12 @@ extension TodoListViewModel {
         remoteDatabase.detachListener()
     }
     
+}
+
+extension TodoListViewModel {
+    
     private func beginDataSetup() {
+        delegate.showLoading()
         remoteDatabase.todoItemListViewDelegate = self
         TaskType.forEachDo {
             self.remoteDatabase.attachListenerForTodoItemListPositions(for: $0)
@@ -156,151 +227,124 @@ extension TodoListViewModel {
             taskDataSource.todoItems = todoItems
             
             self.invokeDelegateActionIfCurrentTaskType(is: taskType) {
+                $0.hideLoading()
                 $0.stopRefreshing()
-                $0.reloadAllItems()
+                self.loadData(shouldAnimate: false)
             }
         }
     }
     
-    private func getTodoItem(atIndexPath indexPath: IndexPath) -> TodoItem? {
-        
-        let indexPathDocumentIDMap = currentTaskDataSource.indexPathDocumentIDMap
-        let documentIDTodoItemMap = currentTaskDataSource.documentIDTodoItemMap
-        
-        guard let documentID = indexPathDocumentIDMap[indexPath] else {
-            Logger.log(reason: "Cannot find document ID for IndexPath \(indexPath)")
-            return nil
-        }
-        
-        guard let todoItem = documentIDTodoItemMap[documentID] else {
-            Logger.log(reason: "Cannot find Todo Item for Document ID \(documentID)")
-            return nil
-        }
-        return todoItem
-    }
-    
-    private func removeTodoItem(atIndexPath indexPath: IndexPath) {
-        guard let documentID = getTodoItem(atIndexPath: indexPath)?.documentID else {
-            Logger.log(reason: "Failed to remove item at IndexPath \(indexPath)")
-            return
-        }
-        currentTaskDataSource.deleteTodoItem(withDocumentID: documentID)
+    private func loadData(shouldAnimate: Bool) {
+        var snapshot = NSDiffableDataSourceSnapshot<TodoItemSection, TodoItemListModel>()
+        snapshot.appendSections([TodoItemSection.zero])
+        let items = getTodoItemListModel(forTodoItems: currentTaskDataSource.todoItems)
+        snapshot.appendItems(items)
+        delegate.dataSource.apply(snapshot, animatingDifferences: shouldAnimate)
     }
     
     
-    func getTotalCount() -> Int {
-        return currentTaskDataSource.documentIDTodoItemMap.values.count
-    }
-    
-    
-    func getTodoItem(forIndexPath indexPath: IndexPath) -> TodoItemListModel {
+    func getTodoItemListModel(forTodoItems todoItems: [TodoItem]) -> [TodoItemListModel] {
         
-        guard let todoItem = getTodoItem(atIndexPath: indexPath) else {
-            fatalError()
-        }
+        var todoItemListModels = [TodoItemListModel]()
         
-        let textColor: UIColor = indexPath.row % 2 == 0 ? #colorLiteral(red: 0.5490196078, green: 0.7764705882, blue: 0.2901960784, alpha: 1) : #colorLiteral(red: 0.9647058824, green: 0.6901960784, blue: 0.0431372549, alpha: 1)
-        let completeButtonColor = todoItem.priority.color
+        for (index, todoItem) in todoItems.enumerated() {
+            
+            let textColor: UIColor = index % 2 == 0 ? #colorLiteral(red: 0.5490196078, green: 0.7764705882, blue: 0.2901960784, alpha: 1) : #colorLiteral(red: 0.9647058824, green: 0.6901960784, blue: 0.0431372549, alpha: 1)
+            let completeButtonColor = todoItem.priority.color
+            
+            let checkBoxAction: ((RoundedCheckBoxButton) -> ())? = { checkBox in
+                
+                let currentTaskType: TaskType = todoItem.isCompleted ? .completed: .pending
+                let newTaskType: TaskType = currentTaskType == .pending ? .completed : .pending
+                
+                checkBox.toggle()
+                todoItem.isCompleted = checkBox.isChecked
+                
+                self.remoteDatabase.moveTodoItem(todoItem: todoItem,
+                                                 currentTaskType: currentTaskType,
+                                                 newTaskType: newTaskType,
+                                                 index: index,
+                                                 onCompletion: nil)
+                
+            } // checkBoxAction closure ends ...
+            
+            let todoItemListModel = TodoItemListModel(ID: todoItem.ID,
+                                                      name: todoItem.name,
+                                                      textColor: textColor,
+                                                      completeButtonColor: completeButtonColor,
+                                                      isCompleted: todoItem.isCompleted,
+                                                      checkBoxAction: checkBoxAction)
+            
+            todoItemListModels.append(todoItemListModel)
+            
+        } // loop ends ...
         
-        let checkBoxAction: ((RoundedCheckBoxButton) -> ())? = { checkBox in
-            
-            let currentTaskType: TaskType = todoItem.isCompleted ? .completed: .pending
-            let newTaskType: TaskType = currentTaskType == .pending ? .completed : .pending
-            
-            checkBox.toggle()
-            todoItem.isCompleted = checkBox.isChecked
-            
-            self.remoteDatabase.moveTodoItem(todoItem: todoItem,
-                                             currentTaskType: currentTaskType,
-                                             newTaskType: newTaskType, index: indexPath.row, onCompletion: nil)
-            
-        } // checkBoxAction closure ends ...
+        return todoItemListModels
         
-        return TodoItemListModel(name: todoItem.name,
-                                 textColor: textColor,
-                                 completeButtonColor: completeButtonColor,
-                                 isCompleted: todoItem.isCompleted,
-                                 checkBoxAction: checkBoxAction)
-    }
+    }// func ends ..
     
 }
 
+// MARK:- Listener Delegate Methods
 extension TodoListViewModel: TodoItemListViewDbDelegate {
-    
+
     func todoItemPositionDidChange(from sourceIndex: Int, to destinationIndex: Int,
                                    taskType: TaskType) {
-        //        if lastSourceIndex == sourceIndex && lastDestinationIndex == destinationIndex  { return }
-        let sourceIndexPath = IndexPath(row: sourceIndex, section: 0)
-        let destinationIndexPath = IndexPath(row: destinationIndex, section: 0)
-        invokeDelegateActionIfCurrentTaskType(is: taskType) {
-            $0.moveItem(at: sourceIndexPath, to: destinationIndexPath)
-        }
+        getTaskDataSource(for: taskType).sortByPosition()
+        loadDataIfCurrentTaskType(is: taskType)
     }
     
-    func todoItemListViewDbDelegate(positions: [String], taskType: TaskType) {
-        getTaskDataSource(for: taskType).todoItemsPositions = positions
+    func todoItemListViewDbDelegate(positions: [String], taskType: TaskType, isSortOperation: Bool) {
+        let taskDataSource = getTaskDataSource(for: taskType)
+        taskDataSource.todoItemsPositions = positions
+        
+        guard isSortOperation else { return }
+        currentTaskDataSource.sortByPosition()
+        loadData(shouldAnimate: true)
     }
     
     func todoItemListViewDbDelegate(didAddTodoItem newTodoItem: TodoItem, taskType: TaskType) {
-        
         let taskDataSource = getTaskDataSource(for: taskType)
-        taskDataSource.documentIDTodoItemMap[newTodoItem.documentID] = newTodoItem
+        taskDataSource.todoItems.append(newTodoItem)
         
-        let indexPathToInsert = IndexPath(item: getTotalCount() - 1, section: 0)
-        let indexPathToScroll = IndexPath(item: getTotalCount() - 2, section: 0)
+        loadDataIfCurrentTaskType(is: taskType)
         
         invokeDelegateActionIfCurrentTaskType(is: taskType) {
-            $0.appendItem(newTodoItem, atIndexPath: indexPathToInsert)
+            let totalItemCount = currentTaskDataSource.todoItems.count - 2
+            let indexPathToScroll = IndexPath(item: totalItemCount, section: 0)
             $0.scrollToItem(atIndexPath: indexPathToScroll)
         }
     }
     
     
     func didDeletePositionForTodoItem(atIndex index: Int, taskType: TaskType) {
-        getTaskDataSource(for: taskType).indexPathToDelete = IndexPath(row: index, section: 0)
+        //        getTaskDataSource(for: taskType).indexPathToDelete = IndexPath(row: index, section: 0)
     }
     
     
     func todoItemListViewDbDelegate(didDeleteTodoItem deletedTodoItem: TodoItem, taskType: TaskType) {
         
         let taskDataSource = getTaskDataSource(for: taskType)
-        taskDataSource.documentIDTodoItemMap[deletedTodoItem.documentID] = nil
         
-        var indexPathToDelete: IndexPath!
-        
-        for (indexPath, documentID) in taskDataSource.indexPathDocumentIDMap {
-            guard documentID == deletedTodoItem.documentID else { continue }
-            indexPathToDelete = indexPath
+        taskDataSource.todoItems.removeAll { (todoItem) -> Bool in
+            return todoItem.ID == deletedTodoItem.ID
         }
         
-        guard indexPathToDelete != nil else {
-            Logger.log(reason: "Delete failed! IndexPath to delete was not found! Reloading all items!")
-            delegate.reloadAllItems()
-            return
-        }
-        
-        invokeDelegateActionIfCurrentTaskType(is: taskType) {
-            $0.deleteItem(atIndexPath: indexPathToDelete)
-        }
+        loadDataIfCurrentTaskType(is: taskType)
     }
     
     func todoItemListViewDbDelegate(didUpdateTodoItem updatedTodoItem: TodoItem, taskType: TaskType) {
         
         let taskDataSource = getTaskDataSource(for: taskType)
-        let todoItemsPositions = getTodoItemPositions(for: taskType)
         
-        taskDataSource.documentIDTodoItemMap[updatedTodoItem.documentID] = updatedTodoItem
-        
-        guard let indexForUpdatedTodoItem = todoItemsPositions.firstIndex(of: updatedTodoItem.documentID) else {
-            Logger.log(reason: "Failed to update todoItem \(updatedTodoItem) !")
-            return
+        taskDataSource.todoItems = taskDataSource.todoItems.map { (todoItem) -> TodoItem in
+            guard todoItem.ID == updatedTodoItem.ID else { return todoItem }
+            return updatedTodoItem
         }
         
-        invokeDelegateActionIfCurrentTaskType(is: taskType) {
-            let indexPathToUpdate = IndexPath(row: indexForUpdatedTodoItem, section: 0)
-            $0.reloadItem(atIndexPath: indexPathToUpdate)
-        }
-    }
+        loadDataIfCurrentTaskType(is: taskType)
+        
+    } // func ends ...
     
 }
 
@@ -318,8 +362,9 @@ extension TodoListViewModel {
         action(delegate)
     }
     
-    func getTodoItemPositions(for taskType: TaskType) -> [String] {
-        return getTaskDataSource(for: taskType).todoItemsPositions
+    func loadDataIfCurrentTaskType(is taskType: TaskType) {
+        guard currentTaskType == taskType else { return }
+        self.loadData(shouldAnimate: true)
     }
     
 }

@@ -20,6 +20,7 @@ enum ListOperation: String {
     case delete
     case update
     case reorder
+    case sort
 }
 
 enum TaskType: CaseIterable {
@@ -34,6 +35,7 @@ extension TaskType {
         }
     }
 }
+
 
 enum TaskPriority: Int {
     case high
@@ -99,7 +101,7 @@ extension TodoEntryViewModel {
             self.delegate?.didCompleteOperation(.add)
         }
         
-        let todoItem = TodoItem(name: taskName, notes: taskNotes, priority: taskPriority)
+        let todoItem = TodoItem(name: taskName, notes: taskNotes, priority: taskPriority, reminderDateTime: nil)
         remoteDatabase.saveTodoItem(todoItem, to: .pending, execute: .operation(onCompletion))
         
     }
@@ -127,5 +129,7 @@ extension TodoEntryViewModel {
 }
 
 private extension TodoEntryViewModel {
-    
+    func setDueDate(_ date: Date, for todoItem: TodoItem) {
+        
+    }
 }

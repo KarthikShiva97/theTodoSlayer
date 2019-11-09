@@ -43,6 +43,23 @@ class TodoListVC: UIViewController {
         return view
     }()
     
+    private lazy var activityIndicator: UIActivityIndicatorView = {
+        let view = UIActivityIndicatorView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.color = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
+        view.style = .medium
+        return view
+    }()
+    
+    private let activityIndicatorLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.text = "LOADING"
+        label.textColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
+        label.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+        return label
+    }()
+    
     private lazy var collectionView: UICollectionView = {
         let flowLayout = UICollectionViewFlowLayout()
         flowLayout.scrollDirection = .vertical
@@ -53,12 +70,15 @@ class TodoListVC: UIViewController {
         cv.bounces = true
         cv.alwaysBounceVertical = true
         cv.refreshControl = refreshControl
-        
         cv.delegate = self
-        cv.dataSource = self
+        cv.dragDelegate = self
+        cv.dropDelegate = self
+        cv.dragInteractionEnabled = true
         cv.register(TaskCell.self, forCellWithReuseIdentifier: TaskCell.name)
         return cv
     }()
+    
+    lazy var dataSource = makeDataSource()
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nil, bundle: nil)
@@ -77,16 +97,13 @@ class TodoListVC: UIViewController {
         
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(handleEditButton))
         
-        collectionView.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(handleLongPressGesture(gesture:))))
+        collectionView.dataSource = dataSource
         
         setupSegmentedControl()
         setupCollectionView()
         setupNewTaskButton()
-        viewModel.willEnterScreen()
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        
+        setupActivityIndicator()
+        viewModel.screenDidLoad()
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -95,6 +112,17 @@ class TodoListVC: UIViewController {
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         collectionView.collectionViewLayout.invalidateLayout()
+    }
+}
+
+extension TodoListVC {
+    private func makeDataSource() -> UICollectionViewDiffableDataSource<TodoItemSection, TodoItemListModel> {
+        UICollectionViewDiffableDataSource(collectionView: collectionView) { (collectionView, indexPath, todoItemListModel) -> UICollectionViewCell? in
+            let taskCell = collectionView.dequeueReusableCell(withReuseIdentifier: TaskCell.name,
+                                                              for: indexPath) as! TaskCell
+            taskCell.configure(with: todoItemListModel)
+            return taskCell
+        }
     }
 }
 
@@ -127,6 +155,19 @@ extension TodoListVC {
             make.height.width.equalTo(50)
         }
     }
+    
+    private func setupActivityIndicator() {
+        view.addSubview(activityIndicator)
+        activityIndicator.snp.makeConstraints { (make) in
+            make.centerX.centerY.equalToSuperview()
+        }
+        
+        view.addSubview(activityIndicatorLabel)
+        activityIndicatorLabel.snp.makeConstraints { (make) in
+            make.top.equalTo(activityIndicator.snp.bottom).offset(10)
+            make.centerX.equalTo(activityIndicator)
+        }
+    }
 }
 
 // MARK:- Event Handling
@@ -138,8 +179,12 @@ extension TodoListVC {
     
     @objc private func handleEditButton() {
         let alertController = UIAlertController(title: "Sorting Options", message: "", preferredStyle: .actionSheet)
-        alertController.addAction(UIAlertAction(title: "Sort by name", style: .default, handler: nil))
-        alertController.addAction(UIAlertAction(title: "Sort by priority", style: .default, handler: nil))
+        alertController.addAction(UIAlertAction(title: "Sort by name", style: .default) { _ in
+            self.viewModel.sortBy(.name)
+        })
+        alertController.addAction(UIAlertAction(title: "Sort by priority ✔️ ", style: .default) { _ in
+            self.viewModel.sortBy(.priority)
+        })
         alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         present(alertController, animated: true, completion: nil)
     }
@@ -154,28 +199,13 @@ extension TodoListVC {
     }
 }
 
-// MARK:- Data Source
-extension TodoListVC: UICollectionViewDataSource {
-    
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return viewModel.getTotalCount()
-    }
-    
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let taskCell = collectionView.dequeueReusableCell(withReuseIdentifier: TaskCell.name,
-                                                          for: indexPath) as! TaskCell
-        taskCell.configure(with: viewModel.getTodoItem(forIndexPath: indexPath))
-        return taskCell
-    }
-    
-}
 
 // MARK:- Delegate
 extension TodoListVC: UICollectionViewDelegateFlowLayout {
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         
-        let todoName =  viewModel.getTodoItem(forIndexPath: indexPath).name
+        let todoName =  viewModel.getTodoItemName(atIndexPath: indexPath)
         
         let width = (collectionView.frame.width - (TaskCell.leftSidePadding + TaskCell.rightSidePadding))
         let size = CGSize(width: width, height: .greatestFiniteMagnitude)
@@ -198,81 +228,58 @@ extension TodoListVC: UICollectionViewDelegateFlowLayout {
     
 }
 
-// MARK:- Collection View Cells Reordering
-extension TodoListVC {
-    
-    func collectionView(_ collectionView: UICollectionView, moveItemAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        viewModel.moveItem(from: sourceIndexPath, to: destinationIndexPath)
+extension TodoListVC: UICollectionViewDragDelegate {
+    func collectionView(_ collectionView: UICollectionView,
+                        itemsForBeginning session: UIDragSession,
+                        at indexPath: IndexPath) -> [UIDragItem] {
+        
+        return viewModel.getDragItem(atIndexPath: indexPath)
+    }
+}
+
+extension TodoListVC: UICollectionViewDropDelegate {
+    func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
+        guard let destinationIndexPath = coordinator.destinationIndexPath else { return }
+        for item in coordinator.items {
+            guard let sourceIndexPath = item.sourceIndexPath else { continue }
+            viewModel.moveItem(from: sourceIndexPath, to: destinationIndexPath)
+        }
     }
     
-    @objc func handleLongPressGesture(gesture: UILongPressGestureRecognizer) {
-        
-        switch gesture.state {
-            
-        case .began:
-            guard let selectedIndexPath = collectionView.indexPathForItem(at: gesture.location(in: collectionView)) else {
-                print("Reordering Failed! Cannot determine selected IndexPath!")
-                collectionView.endInteractiveMovement()
-                return
-            }
-            collectionView.beginInteractiveMovementForItem(at: selectedIndexPath)
-            
-        case .changed:
-            collectionView.updateInteractiveMovementTargetPosition(gesture.location(in: collectionView))
-            
-        case .ended:
-            collectionView.endInteractiveMovement()
-            
-        case .cancelled:
-            collectionView.cancelInteractiveMovement()
-            
-        default:
-            collectionView.cancelInteractiveMovement()
-            
-        } // switch ends ...
-        
-    } // func ends ...
+    func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
+        guard collectionView.hasActiveDrag else {
+            return UICollectionViewDropProposal(operation: .forbidden)
+        }
+        return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+    }
     
-} // extension ends ...
+}
 
 extension TodoListVC: TodoListViewModelDelegate {
+    
+    func showLoading() {
+        self.activityIndicator.isHidden = false
+        self.activityIndicatorLabel.isHidden = false
+        self.activityIndicator.startAnimating()
+    }
+    
+    func hideLoading() {
+        activityIndicator.isHidden = true
+        activityIndicatorLabel.isHidden = true
+        activityIndicator.stopAnimating()
+    }
     
     func stopRefreshing() {
         refreshControl.endRefreshing()
     }
     
-    func moveItem(at sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        collectionView.moveItem(at: sourceIndexPath, to: destinationIndexPath)
-    }
-    
     func openTodoDetailVC(withMode mode: TodoDetailVC.Mode) {
         let todoItemEntryVC = TodoDetailVC(mode: mode)
-        present(todoItemEntryVC, animated: true, completion: nil)
-    }
-    
-    func appendItem(_ todoItem: TodoItem, atIndexPath indexPath: IndexPath) {
-        collectionView.insertItems(at: [indexPath])
-    }
-    
-    func reloadItem(atIndexPath indexPath: IndexPath) {
-        collectionView.reloadItems(at: [indexPath])
-    }
-    
-    func deleteItem(atIndexPath indexPath: IndexPath) {
-        collectionView.deleteItems(at: [indexPath])
+        navigationController?.pushViewController(todoItemEntryVC, animated: true)
     }
     
     func scrollToItem(atIndexPath indexPath: IndexPath) {
         collectionView.scrollToItem(at: indexPath, at: .top, animated: true)
     }
     
-    func reloadAllItems() {
-        collectionView.reloadData()
-    }
-    
-    func reloadAllItemsWithAnimation() {
-        collectionView.performBatchUpdates({
-            collectionView.reloadSections(IndexSet(integer: 0))
-        }, completion: nil)
-    }
 }

@@ -165,7 +165,11 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                 return
             }
             
-            self.todoItemListViewDelegate?.todoItemListViewDbDelegate(positions: positions, taskType: taskType)
+            let isSortOperation = lastOperation == .sort ? true : false
+            
+            self.todoItemListViewDelegate?.todoItemListViewDbDelegate(positions: positions,
+                                                                      taskType: taskType,
+                                                                      isSortOperation: isSortOperation)
             
             guard [ListOperation.delete, ListOperation.reorder].contains(lastOperation) else { return }
             
@@ -202,14 +206,21 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
         
     }
     
-    func updateTodoListPositions(positions: [String], positionChange: [String: Int],
+    func updateTodoListPositions(positions: [String], positionChange: [String: Int]? = nil,
                                  taskType: TaskType) {
+        
+        var positionData: [String: Any] = [ListConstants.Meta.positions: positions]
+        
+        if let positionChange = positionChange {
+            positionData[ListConstants.Meta.lastOperation] = ListOperation.reorder.rawValue
+            positionData[ListConstants.Meta.lastOperationMeta] = positionChange
+        } else {
+            positionData[ListConstants.Meta.lastOperation] = ListOperation.sort.rawValue
+        }
         
         let path = taskType == .pending ? pendingTasksMetaPath : completedTasksMetaPath
         let pathToUpdate = firebase.document(path)
-        pathToUpdate.setData([ListConstants.Meta.positions: positions,
-                              ListConstants.Meta.lastOperation: ListOperation.reorder.rawValue,
-                              ListConstants.Meta.lastOperationMeta: positionChange])
+        pathToUpdate.setData(positionData)
     }
     
     func clearLastPositionChanges() {

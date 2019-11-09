@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>469144569195-m8f6ed38hlikvfn4t2gbkcmqhojvanpl.apps.googleusercontent.com</string>
+	<string>469144569195-8u14cvurfbj2jcl9368ro2vtlmc8ige5.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.469144569195-m8f6ed38hlikvfn4t2gbkcmqhojvanpl</string>
+	<string>com.googleusercontent.apps.469144569195-8u14cvurfbj2jcl9368ro2vtlmc8ige5</string>
 	<key>API_KEY</key>
 	<string>AIzaSyBE3IXiZWRLKhExu5fPLR4jC64ccKug7yI</string>
 	<key>GCM_SENDER_ID</key>
@@ -13,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.todoSlayer.todoSlayer</string>
+	<string>com.karthik.todoSlayer</string>
 	<key>PROJECT_ID</key>
 	<string>todoslayer-3810a</string>
 	<key>STORAGE_BUCKET</key>
@@ -29,7 +29,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:469144569195:ios:0958adf12c91fde7</string>
+	<string>1:469144569195:ios:778792b74572ed8fe6b82e</string>
 	<key>DATABASE_URL</key>
 	<string>https://todoslayer-3810a.firebaseio.com</string>
 </dict>

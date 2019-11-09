@@ -11,28 +11,19 @@ import Foundation
 class TodoListVCModel {
     
     let taskType: TaskType
-    
-    var todoItemsPositions = [String]() {
-        didSet {
-            createIndexPathDocumentIDMap()
-        }
-    }
-    
+    var todoItemsPositions = [String]()
     var todoItems = [TodoItem]() {
         didSet {
-            createDocumentIDTodoItemMap()
+            guard oldValue != todoItems else { return }
+            sortByPosition()
         }
     }
-    
-    var indexPathDocumentIDMap = [IndexPath: String]()
-    var documentIDTodoItemMap = [String: TodoItem]()
     
     // This refers to the last positions moved on the list
     var lastSourceIndex: Int = 0
     var lastDestinationIndex: Int = 0
     
     var indexPathToDelete: IndexPath?
-    
     
     init(taskType: TaskType) {
         self.taskType = taskType
@@ -43,42 +34,25 @@ class TodoListVCModel {
 extension TodoListVCModel {
     
     func clearData() {
-        indexPathDocumentIDMap = [:]
-        documentIDTodoItemMap = [:]
+        todoItemsPositions = []
+        todoItems = []
     }
     
     func deleteTodoItem(withDocumentID documentID: String) {
-        documentIDTodoItemMap[documentID] = nil
+        todoItems.removeAll { (todoItem) -> Bool in
+            todoItem.documentID == documentID
+        }
     }
     
-}
-
-extension TodoListVCModel {
-    
-    private func createIndexPathDocumentIDMap() {
-        // Index Path Document ID map is created from todoItemPositions
-        // If the latter is empty, former should also be empty
-        guard self.todoItemsPositions.isEmpty == false else {
-            indexPathDocumentIDMap = [:]
+    func sortByPosition() {
+        guard todoItemsPositions.count == todoItems.count else {
+            Logger.log(reason: "Cannot sort! Count mismatch!")
             return
         }
-        
-        var indexPathDocumentIDMap = [IndexPath: String]()
-        
-        for index in 0...(todoItemsPositions.count - 1) {
-            let indexPath = IndexPath(row: index, section: 0)
-            let documentID = todoItemsPositions[index]
-            indexPathDocumentIDMap[indexPath] = documentID
+        todoItems.sort { (todoItem1, todoItem2) -> Bool in
+            let item1ID = todoItem1.documentID
+            let item2ID = todoItem2.documentID
+            return todoItemsPositions.firstIndex(of: item1ID)! < todoItemsPositions.firstIndex(of: item2ID)!
         }
-        
-        self.indexPathDocumentIDMap = indexPathDocumentIDMap
-    }
-    
-    private func createDocumentIDTodoItemMap() {
-        var documentIDTodoItemMap = [String: TodoItem]()
-        self.todoItems.forEach { (todoItem) in
-            documentIDTodoItemMap[todoItem.documentID] = todoItem
-        }
-        self.documentIDTodoItemMap = documentIDTodoItemMap
     }
 }

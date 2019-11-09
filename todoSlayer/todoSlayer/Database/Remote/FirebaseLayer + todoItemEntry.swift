@@ -109,7 +109,11 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
         let todoItemPathRef = self.firebase.collection(pathToDelete).document(todoItem.documentID)
         
         
-        deleteListPosition(forDocumentID: todoItem.documentID, atIndex: index, taskType: taskType, batch: batch)
+        deleteListPosition(forDocumentID: todoItem.documentID,
+                           atIndex: index,
+                           taskType: taskType,
+                           batch: batch)
+        
         batch.deleteDocument(todoItemPathRef)
         
         
@@ -127,7 +131,15 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
     
     
     func updateTodoItem(_ todoItem: TodoItem) {
-        firebase.collection(pendingTasksPath).document(todoItem.documentID).setData(todoItem.json)
+        let path = todoItem.taskType == .pending ? pendingTasksPath : completedTasksPath
+        firebase.collection(path).document(todoItem.documentID).getDocument { (snapshot, error) in
+            guard let snapshot = snapshot else { return }
+            guard snapshot.exists else {
+                Logger.log(reason: "Update for Todo \(todoItem) Failed! It does not exist!")
+                return
+            }
+            self.firebase.collection(path).document(todoItem.documentID).setData(todoItem.json)
+        }
     }
     
     

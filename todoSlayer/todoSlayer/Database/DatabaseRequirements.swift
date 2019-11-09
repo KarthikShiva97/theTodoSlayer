@@ -23,7 +23,7 @@ protocol TodoItemDetailViewDbAPI {
     
     func createListPosition(forDocumentID documentID: String, for taskType: TaskType, batch: WriteBatch)
     
-    func updateTodoListPositions(positions: [String], positionChange: [String: Int],
+    func updateTodoListPositions(positions: [String], positionChange: [String: Int]?,
                                  taskType: TaskType)
     
     func clearLastPositionChanges()
@@ -42,7 +42,8 @@ protocol TodoItemListViewDbDelegate: class {
                                       taskType: TaskType)
     
     func todoItemListViewDbDelegate(positions: [String],
-                                    taskType: TaskType)
+                                    taskType: TaskType,
+                                    isSortOperation: Bool)
     
     func todoItemListViewDbDelegate(didAddTodoItem newTodoItem: TodoItem,
                                     taskType: TaskType)
@@ -52,4 +53,8 @@ protocol TodoItemListViewDbDelegate: class {
     
     func todoItemListViewDbDelegate(didUpdateTodoItem updatedTodoItem: TodoItem,
                                     taskType: TaskType)
+}
+
+protocol DeviceTokenManager {
+    func storeDeviceToken(token: String, forPlatform platform: AppViewModel.Platform)
 }
