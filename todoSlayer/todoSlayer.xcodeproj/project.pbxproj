@@ -16,11 +16,14 @@
 		F010CBB922883F7E00F2708A /* RealmLayer + TodoItemList.swift in Sources */ = {isa = PBXBuildFile; fileRef = F010CBB822883F7E00F2708A /* RealmLayer + TodoItemList.swift */; };
 		F0217B18239BA25F0077407A /* TestVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0217B17239BA25F0077407A /* TestVC.swift */; };
 		F0217B1A239D42740077407A /* HomeVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0217B19239D42740077407A /* HomeVC.swift */; };
+		F0217B1C239D47F20077407A /* HomeViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0217B1B239D47F20077407A /* HomeViewCell.swift */; };
 		F03A05AD23080751003967E1 /* DateTimeVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03A05AC23080751003967E1 /* DateTimeVC.swift */; };
 		F03AB5F52284915300E37B2E /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5F42284915300E37B2E /* TodoItem.swift */; };
 		F03AB5F72284954E00E37B2E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5F62284954E00E37B2E /* Extensions.swift */; };
 		F03AB5F92284967200E37B2E /* TodoListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5F82284967200E37B2E /* TodoListViewModel.swift */; };
 		F03AB5FB2284971B00E37B2E /* TodoDetailVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5FA2284971B00E37B2E /* TodoDetailVC.swift */; };
+		F04189AA239D562200BDD849 /* List.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04189A9239D562200BDD849 /* List.swift */; };
+		F04189AC239D68C000BDD849 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04189AB239D68C000BDD849 /* HomeViewModel.swift */; };
 		F049B06C2393D5B30070F43B /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = F049B06B2393D5B30070F43B /* User.swift */; };
 		F04D9D8323938CE400F759C3 /* AppSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = F04D9D8223938CE400F759C3 /* AppSession.swift */; };
 		F060A5EC22A2F92E00B095B3 /* RoundedCheckBoxButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = F060A5EB22A2F92E00B095B3 /* RoundedCheckBoxButton.swift */; };
@@ -56,11 +59,14 @@
 		F010CBB822883F7E00F2708A /* RealmLayer + TodoItemList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RealmLayer + TodoItemList.swift"; sourceTree = "<group>"; };
 		F0217B17239BA25F0077407A /* TestVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestVC.swift; sourceTree = "<group>"; };
 		F0217B19239D42740077407A /* HomeVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeVC.swift; sourceTree = "<group>"; };
+		F0217B1B239D47F20077407A /* HomeViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewCell.swift; sourceTree = "<group>"; };
 		F03A05AC23080751003967E1 /* DateTimeVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DateTimeVC.swift; sourceTree = "<group>"; };
 		F03AB5F42284915300E37B2E /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
 		F03AB5F62284954E00E37B2E /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		F03AB5F82284967200E37B2E /* TodoListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListViewModel.swift; sourceTree = "<group>"; };
 		F03AB5FA2284971B00E37B2E /* TodoDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoDetailVC.swift; sourceTree = "<group>"; };
+		F04189A9239D562200BDD849 /* List.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = List.swift; sourceTree = "<group>"; };
+		F04189AB239D68C000BDD849 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		F049B06B2393D5B30070F43B /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		F04D9D8223938CE400F759C3 /* AppSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSession.swift; sourceTree = "<group>"; };
 		F060A5EB22A2F92E00B095B3 /* RoundedCheckBoxButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = RoundedCheckBoxButton.swift; path = todoSlayer/View/RoundedCheckBoxButton.swift; sourceTree = SOURCE_ROOT; };
@@ -137,7 +143,6 @@
 				F002A0A6227ECFA00018B679 /* Info.plist */,
 				F0860CEF2376C0C900298AE5 /* todoSlayer.entitlements */,
 				F0F28A12238A9DD40017EAFD /* AppEntry */,
-				F010CBB5228835E200F2708A /* Cells */,
 				F09AC661228805C5003DC091 /* Database */,
 				F09AC6602287F79E003DC091 /* Others */,
 				F03AB5F32284914200E37B2E /* Model */,
@@ -153,6 +158,7 @@
 			children = (
 				F010CBB6228835F500F2708A /* TaskCell.swift */,
 				F060A5EB22A2F92E00B095B3 /* RoundedCheckBoxButton.swift */,
+				F0217B1B239D47F20077407A /* HomeViewCell.swift */,
 			);
 			path = Cells;
 			sourceTree = "<group>";
@@ -163,6 +169,7 @@
 				F03AB5F82284967200E37B2E /* TodoListViewModel.swift */,
 				F09AC65D2287F753003DC091 /* TodoDetailViewModel.swift */,
 				F0860CF42376D32100298AE5 /* AppEntryViewModel.swift */,
+				F04189AB239D68C000BDD849 /* HomeViewModel.swift */,
 			);
 			path = ViewModel;
 			sourceTree = "<group>";
@@ -173,6 +180,7 @@
 				F008BB4D22AB81C500700CED /* TodoListVCModel.swift */,
 				F03AB5F42284915300E37B2E /* TodoItem.swift */,
 				F049B06B2393D5B30070F43B /* User.swift */,
+				F04189A9239D562200BDD849 /* List.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -202,6 +210,7 @@
 		F09AC65F2287F77A003DC091 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				F010CBB5228835E200F2708A /* Cells */,
 				F07EA87E23890E0A00A0FD97 /* TimeVC.swift */,
 				F03A05AC23080751003967E1 /* DateTimeVC.swift */,
 				F002A09C227ECF9E0018B679 /* TodoListVC.swift */,
@@ -376,8 +385,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				F0860CF52376D32100298AE5 /* AppEntryViewModel.swift in Sources */,
+				F04189AC239D68C000BDD849 /* HomeViewModel.swift in Sources */,
+				F04189AA239D562200BDD849 /* List.swift in Sources */,
 				F002A09D227ECF9E0018B679 /* TodoListVC.swift in Sources */,
 				F03AB5F52284915300E37B2E /* TodoItem.swift in Sources */,
+				F0217B1C239D47F20077407A /* HomeViewCell.swift in Sources */,
 				F03AB5FB2284971B00E37B2E /* TodoDetailVC.swift in Sources */,
 				F0994F952393746B009093BD /* LoginScreen.swift in Sources */,
 				F0F28A14238A9DE30017EAFD /* RootViewNavigator.swift in Sources */,
