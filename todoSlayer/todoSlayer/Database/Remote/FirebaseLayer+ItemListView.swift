@@ -18,7 +18,7 @@ fileprivate var todoItemListPositionEventListener: ListenerRegistration!
 fileprivate var todoItemListenerCount = 0
 fileprivate var positionsListenerCount = 0
 
-extension FirebaseLayer: TodoItemListViewDbAPI {
+extension FirebaseLayer: ItemListViewService {
     
     func getTodoItemListPositions(for taskType: TaskType, onCompletion: @escaping (Result<[String], TodoItemListViewDbAPIError>)->()) {
         
@@ -39,7 +39,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                 return onCompletion(.failure(.nilSnapshot))
             }
             
-            guard let positions = snapshotData[ListConstants.Meta.positions] as? [String] else {
+            guard let positions = snapshotData[Constants.Meta.positions.rawValue] as? [String] else {
                 Logger.log(reason: "\(errorMsg). Failed to typecast !")
                 return onCompletion(.failure(.typecastFailed))
             }
@@ -150,7 +150,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                 return
             }
             
-            guard let lastOperationAsString = snapshotData[ListConstants.Meta.lastOperation] as? String else {
+            guard let lastOperationAsString = snapshotData[Constants.Meta.lastOperation.rawValue] as? String else {
                 Logger.log(.typecastFailed)
                 return
             }
@@ -160,7 +160,7 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
                 return
             }
             
-            guard let positions = snapshotData[ListConstants.Meta.positions] as? [String] else {
+            guard let positions = snapshotData[Constants.Meta.positions.rawValue] as? [String] else {
                 Logger.log(.typecastFailed, reason: "Failed to get list positions!")
                 return
             }
@@ -173,14 +173,14 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
             
             guard [ListOperation.delete, ListOperation.reorder].contains(lastOperation) else { return }
             
-            guard let lastOperationMeta = snapshotData[ListConstants.Meta.lastOperationMeta] as? [String: Any] else {
+            guard let lastOperationMeta = snapshotData[Constants.Meta.lastOperationMeta.rawValue] as? [String: Any] else {
                 Logger.log(reason: "Failed to get Operation Meta!")
                 return
             }
             
             if lastOperation == .delete {
-                let lastRemovedIndexKey = ListConstants.Meta.LastOperationMeta.lastRemovedIndex
-                guard let lastRemovedIndex = lastOperationMeta[lastRemovedIndexKey] as? Int else {
+                let lastRemovedIndexKey = Constants.Meta.LastOperationMeta.lastRemovedIndex
+                guard let lastRemovedIndex = lastOperationMeta[lastRemovedIndexKey.rawValue] as? Int else {
                     Logger.log(reason: "Failed to get last removed index position!")
                     return
                 }
@@ -190,11 +190,11 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
             
             guard lastOperation == .reorder else { return }
             
-            let fromIndexKey = ListConstants.Meta.LastOperationMeta.fromIndex
-            let toIndexKey = ListConstants.Meta.LastOperationMeta.toIndex
+            let fromIndexKey = Constants.Meta.LastOperationMeta.fromIndex
+            let toIndexKey = Constants.Meta.LastOperationMeta.toIndex
             
-            guard let fromIndex = lastOperationMeta[fromIndexKey] as? Int,
-                let toIndex =   lastOperationMeta[toIndexKey] as? Int else {
+            guard let fromIndex = lastOperationMeta[fromIndexKey.rawValue] as? Int,
+                let toIndex =   lastOperationMeta[toIndexKey.rawValue] as? Int else {
                     Logger.log(reason: "Failed to get last position change!")
                     return
             }
@@ -209,13 +209,13 @@ extension FirebaseLayer: TodoItemListViewDbAPI {
     func updateTodoListPositions(positions: [String], positionChange: [String: Int]? = nil,
                                  taskType: TaskType) {
         
-        var positionData: [String: Any] = [ListConstants.Meta.positions: positions]
+        var positionData: [String: Any] = [Constants.Meta.positions.rawValue: positions]
         
         if let positionChange = positionChange {
-            positionData[ListConstants.Meta.lastOperation] = ListOperation.reorder.rawValue
-            positionData[ListConstants.Meta.lastOperationMeta] = positionChange
+            positionData[Constants.Meta.lastOperation.rawValue] = ListOperation.reorder.rawValue
+            positionData[Constants.Meta.lastOperationMeta.rawValue] = positionChange
         } else {
-            positionData[ListConstants.Meta.lastOperation] = ListOperation.sort.rawValue
+            positionData[Constants.Meta.lastOperation.rawValue] = ListOperation.sort.rawValue
         }
         
         let path = taskType == .pending ? pendingTasksMetaPath : completedTasksMetaPath

@@ -29,13 +29,6 @@ class TodoDetailVC: UIViewController {
     
     private var mode: Mode
     private var viewModel: TodoEntryViewModel!
-    private var timeVcPositionConstraint: NSLayoutConstraint!
-    
-    private lazy var timeVC: TimeVC = {
-        let timeVC = TimeVC(delegate: self)
-        timeVC.translatesAutoresizingMaskIntoConstraints = false
-        return timeVC
-    }()
     
     private let taskNameTextField: UITextField = {
         let tf = UITextField()
@@ -89,25 +82,14 @@ class TodoDetailVC: UIViewController {
         return btn
     }()
     
-    private lazy var dueDateButton: UIButton = {
+    private lazy var reminderDateButton: UIButton = {
         let btn = UIButton()
         btn.translatesAutoresizingMaskIntoConstraints = false
         btn.titleLabel?.font = UIFont.systemFont(ofSize: 20, weight: .medium)
         btn.setTitleColor(#colorLiteral(red: 0.9333333333, green: 0.9843137255, blue: 0.9843137255, alpha: 1), for: .normal)
-        btn.setTitle("Choose Due Date", for: .normal)
+        btn.setTitle("Choose Reminder Date", for: .normal)
         btn.backgroundColor = #colorLiteral(red: 0.5568627715, green: 0.3529411852, blue: 0.9686274529, alpha: 1)
-        btn.addTarget(self, action: #selector(handleDueDate), for: .touchUpInside)
-        return btn
-    }()
-    
-    private lazy var timeButton: UIButton = {
-        let btn = UIButton()
-        btn.translatesAutoresizingMaskIntoConstraints = false
-        btn.titleLabel?.font = UIFont.systemFont(ofSize: 20, weight: .medium)
-        btn.setTitleColor(#colorLiteral(red: 0.9333333333, green: 0.9843137255, blue: 0.9843137255, alpha: 1), for: .normal)
-        btn.setTitle("Choose Reminder Time", for: .normal)
-        btn.backgroundColor = #colorLiteral(red: 0.8549019694, green: 0.250980407, blue: 0.4784313738, alpha: 1)
-        btn.addTarget(self, action: #selector(handleTimeSelection), for: .touchUpInside)
+        btn.addTarget(self, action: #selector(handleReminderDate), for: .touchUpInside)
         return btn
     }()
     
@@ -217,7 +199,6 @@ extension TodoDetailVC {
         setupStackView()
         setupStackViewBackground()
         setupStackViewArrangedSubviews()
-        setupTimeVC()
     }
     
     private func setupStackView() {
@@ -245,8 +226,7 @@ extension TodoDetailVC {
         stackView.addArrangedSubview(taskNotesTextField)
         
         stackView.addArrangedSubview(priorityButton)
-        stackView.addArrangedSubview(dueDateButton)
-        stackView.addArrangedSubview(timeButton)
+        stackView.addArrangedSubview(reminderDateButton)
         
         switch mode {
         case .newTodoItem:
@@ -263,9 +243,7 @@ extension TodoDetailVC {
         deleteButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
         updateButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
         priorityButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
-        
-        timeButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
-        dueDateButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
+        reminderDateButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
     }
     
     private func setupScrollView() {
@@ -282,15 +260,6 @@ extension TodoDetailVC {
             make.trailing.equalTo(view).offset(-30)
             make.top.equalTo(view).offset(50)
         }
-    }
-    
-    private func setupTimeVC() {
-        view.addSubview(timeVC)
-        timeVC.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-        timeVC.widthAnchor.constraint(equalTo: view.widthAnchor).isActive = true
-        timeVC.heightAnchor.constraint(equalToConstant: 300).isActive = true
-        timeVcPositionConstraint = timeVC.topAnchor.constraint(equalTo: view.bottomAnchor)
-        timeVcPositionConstraint.isActive = true
     }
 }
 
@@ -358,19 +327,10 @@ extension TodoDetailVC {
         self.dismiss(animated: true, completion: nil)
     }
     
-    @objc private func handleDueDate() {
-        let dateTimeVC = DateVC(mode: .new, delegate: self)
+    @objc private func handleReminderDate() {
+        let dateTimeVC = DateTimeVC(mode: .new, delegate: self)
         let navController = UINavigationController(rootViewController: dateTimeVC)
         present(navController, animated: true, completion: nil)
-    }
-    
-    @objc private func handleTimeSelection() {
-        self.timeVcPositionConstraint.isActive = false
-        self.timeVcPositionConstraint = self.timeVC.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor)
-        self.timeVcPositionConstraint.isActive = true
-        UIView.animate(withDuration: 0.2) {
-            self.view.layoutIfNeeded()
-        }
     }
     
     @objc private func handlePriority() {
@@ -460,26 +420,9 @@ extension TodoDetailVC {
     
 } // extension ends ...
 
-extension TodoDetailVC: DateVCDelegate, TimeVCDelegate {
+
+extension TodoDetailVC: DateTimeVCDelegate {
     func didSelectDate(_ date: Date) {
-        print("User choose this date \(date)!")
-    }
-    
-    func dismiss(selectedTime: Date?) {
-        dismissTimeVC()
-        guard let selectedTime = selectedTime else { return }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "H mm ss zzzz"
-        print(formatter.string(from: selectedTime))
-    }
-    
-    private func dismissTimeVC() {
-        timeVcPositionConstraint.isActive = false
-        timeVcPositionConstraint = timeVC.topAnchor.constraint(equalTo: view.bottomAnchor)
-        timeVcPositionConstraint.isActive = true
-        UIView.animate(withDuration: 0.2) {
-            self.view.layoutIfNeeded()
-        }
+        viewModel.reminderDate = date
     }
 }
-

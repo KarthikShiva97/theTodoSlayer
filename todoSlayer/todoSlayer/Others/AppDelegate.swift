@@ -8,37 +8,37 @@
 
 import UIKit
 import Firebase
+import FirebaseMessaging
+import UserNotifications
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, RootViewNavigatorProvider {
     
-    private let viewModel = AppViewModel()
     var window: UIWindow?
+    var rootViewNavigator: RootViewNavigator!
+    private lazy var viewModel = AppEntryViewModel()
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        
         FirebaseApp.configure()
-        window = UIWindow(frame: UIScreen.main.bounds)
-        
-        let navigationController = UINavigationController(rootViewController: TodoListVC())
-        navigationController.navigationBar.barStyle = .black
-        navigationController.navigationBar.isTranslucent = false
-        navigationController.navigationBar.setBackgroundImage(UIImage(), for: .default)
-        navigationController.navigationBar.shadowImage = UIImage()
-        
-        window?.rootViewController = navigationController
-        window?.makeKeyAndVisible()
-        viewModel.handle(.registerForPushNotifications)
+        Messaging.messaging().delegate = self
+        UNUserNotificationCenter.current().delegate = self
+        rootViewNavigator = RootViewController(viewModel: viewModel)
+        startRootViewNavigator()
         return true
     }
-    
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        viewModel.handle(.handleDeviceTokenResult(.success(deviceToken)))
+}
+
+// MARK:- Notification Handling
+extension AppDelegate: MessagingDelegate, UNUserNotificationCenterDelegate {
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String) {
+        viewModel.handle(.deviceTokenResult(.success(fcmToken)))
     }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        viewModel.handle(.handleDeviceTokenResult(.failure(error)))
+        viewModel.handle(.deviceTokenResult(.failure(error)))
     }
     
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        print("YEAAA brooo!")
+    }
 }
-

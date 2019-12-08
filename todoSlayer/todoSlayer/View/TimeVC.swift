@@ -8,7 +8,7 @@
 import UIKit
 
 protocol TimeVCDelegate: class {
-    func dismiss(selectedTime: Date?)
+    func didDismiss(selectedTime: Date?)
 }
 
 class TimeVC: UIView {
@@ -59,11 +59,13 @@ class TimeVC: UIView {
     }
     
     private func setupLayout() {
+        addSubview(navBar)
         addSubview(timePicker)
         timePicker.snp.makeConstraints {
-            $0.bottom.top.leading.trailing.equalToSuperview()
+            $0.top.equalTo(navBar.snp.bottom).offset(10)
+            $0.bottom.equalTo(snp.bottom).offset(-10)
+            $0.leading.trailing.equalToSuperview()
         }
-        addSubview(navBar)
         navBar.snp.makeConstraints {
             $0.leading.trailing.top.equalToSuperview()
             $0.height.equalTo(44)
@@ -77,10 +79,10 @@ extension TimeVC {
     }
     
     @objc private func handleDone() {
-        delegate?.dismiss(selectedTime: currentTime)
+        delegate?.didDismiss(selectedTime: currentTime)
     }
     
     @objc private func handleCancel() {
-        delegate?.dismiss(selectedTime: nil)
+        delegate?.didDismiss(selectedTime: nil)
     }
 }

@@ -20,9 +20,7 @@ typealias didComplete = ((Bool) -> ())?
 
 //TODO:- Create Objects all the raw strings below
 
-extension FirebaseLayer: TodoItemDetailViewDbAPI {
-    
-    fileprivate typealias Constants = ListConstants
+extension FirebaseLayer: ItemDetailViewService {
     
     func saveTodoItem(_ todoItem: TodoItem, to taskType: TaskType, execute: Execute) {
         
@@ -36,7 +34,7 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
             operationCompletionClosure = completionClosure
             batch = firebase.batch()
             
-        case .syncBatchWrite(let batchReceived):
+        case .syncBatchWrite(_):
             operationCompletionClosure = nil
             asyncBatchWriteCompletionClosure = nil
             fatalError("Cannot perfrom Sync Batch Write!")
@@ -155,9 +153,9 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
     func createListPosition(forDocumentID documentID: String, for taskType: TaskType, batch: WriteBatch) {
         let path = getMetaPath(for: taskType)
         let fullPath = firebase.document(path)
-        let newData = [Constants.Meta.positions: [documentID],
-                       Constants.Meta.lastOperation: ListOperation.add.rawValue,
-                       Constants.Meta.lastOperationMeta: NSNull()] as [String : Any]
+        let newData = [Constants.Meta.positions.rawValue: [documentID],
+                       Constants.Meta.lastOperation.rawValue: ListOperation.add.rawValue,
+                       Constants.Meta.lastOperationMeta.rawValue: NSNull()] as [String : Any]
         
         batch.setData(newData, forDocument: fullPath)
     }
@@ -165,9 +163,9 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
     func addListPosition(forDocumentID documentID: String, for taskType: TaskType, batch: WriteBatch){
         let path = getMetaPath(for: taskType)
         let fullPath = firebase.document(path)
-        let newData  = ([Constants.Meta.positions: FieldValue.arrayUnion([documentID]),
-                         Constants.Meta.lastOperation: ListOperation.add.rawValue,
-                         Constants.Meta.lastOperationMeta: NSNull()] as [String : Any])
+        let newData  = ([Constants.Meta.positions.rawValue: FieldValue.arrayUnion([documentID]),
+                         Constants.Meta.lastOperation.rawValue: ListOperation.add.rawValue,
+                         Constants.Meta.lastOperationMeta.rawValue: NSNull()] as [String : Any])
         batch.updateData(newData, forDocument: fullPath)
     }
     
@@ -180,9 +178,9 @@ extension FirebaseLayer: TodoItemDetailViewDbAPI {
         let metaPathRef = firebase.document(getMetaPath(for: taskType))
         let lastOperationMeta = [Constants.Meta.LastOperationMeta.lastRemovedIndex: index]
         let updatedData =
-            [Constants.Meta.positions: FieldValue.arrayRemove([documentID]),
-             Constants.Meta.lastOperation: ListOperation.delete.rawValue,
-             Constants.Meta.lastOperationMeta: lastOperationMeta] as [String : Any]
+            [Constants.Meta.positions.rawValue: FieldValue.arrayRemove([documentID]),
+             Constants.Meta.lastOperation.rawValue: ListOperation.delete.rawValue,
+             Constants.Meta.lastOperationMeta.rawValue: lastOperationMeta] as [String : Any]
         
         batch.updateData(updatedData, forDocument: metaPathRef)
         

@@ -10,11 +10,12 @@ import Foundation
 import Firebase
 
 enum TodoItemSection {
-    case zero
+    case zero 
 }
 
 class TodoItem {
     let ID: String
+    let deviceToken: String
     private (set) var documentID = String()
     var name: String
     var notes: String
@@ -27,38 +28,41 @@ class TodoItem {
     }
     
     // MARK:- Creating Locally
-    init(name: String, notes: String, priority: TaskPriority, reminderDateTime: String?) {
+    init(name: String, notes: String, priority: TaskPriority, reminderDateTime: String?, deviceToken: String) {
         self.ID = UUID().uuidString
         self.name = name
         self.notes = notes
         self.priority = priority
         self.isCompleted = false
-        self.reminderDateTime = nil
+        self.reminderDateTime = reminderDateTime
+        self.deviceToken = deviceToken
     }
     
     // MARK:- Reconstructing from JSON
     init?(json: [String: Any]) {
         guard let ID = json[Constants.ID] as? String,
+            let deviceToken = json[Constants.deviceToken] as? String,
             let name = json[Constants.name] as? String,
             let notes = json[Constants.notes] as? String,
             let documentID = json[Constants.documentID] as? String,
             let priority =  TaskPriority(rawValue: json[Constants.priority] as? Int ?? -1),
-            let isCompleted = json[Constants.isCompleted] as? Bool ,
-            let reminderDateTime = json[Constants.reminderDateTime] as? String else {
+            let isCompleted = json[Constants.isCompleted] as? Bool else {
                 print("Failed to convert JSON to Todo Item! JSON -> \(json)")
                 return nil
         }
         self.ID = ID
+        self.deviceToken = deviceToken
         self.documentID = documentID
         self.name = name
         self.notes = notes
         self.priority = priority
         self.isCompleted = isCompleted
-        self.reminderDateTime = reminderDateTime
+        self.reminderDateTime = json[Constants.reminderDateTime] as? String
     }
     
     struct Constants {
         static let ID = "ID"
+        static let deviceToken = "deviceToken"
         static let documentID = "documentID"
         static let name = "name"
         static let notes = "notes"
@@ -85,6 +89,7 @@ extension TodoItem {
     var json: [String: Any] {
         let jsonArray: [String : Any] = [
             TodoItem.Constants.ID: ID,
+            TodoItem.Constants.deviceToken: deviceToken,
             TodoItem.Constants.name: name,
             TodoItem.Constants.notes: notes,
             TodoItem.Constants.documentID: documentID,
@@ -106,7 +111,7 @@ extension TodoItem: CustomDebugStringConvertible {
         DocumentID: -> \(documentID)
         Priority:-> \(priority)
         isCompleted:-> \(isCompleted)
-        ReminderDateTime:-> \(reminderDateTime)
+        ReminderDateTime:-> \(String(describing: reminderDateTime))
         """
     }
 }

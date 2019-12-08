@@ -74,13 +74,23 @@ class TodoEntryViewModel {
     
     weak var delegate: TodoEntryViewModelDelegate!
     
-    private let remoteDatabase: TodoItemDetailViewDbAPI = {
+    private let remoteDatabase: ItemDetailViewService = {
         return FirebaseLayer()
     }()
     
     var taskName: String?
     var taskNotes: String = ""
     var taskPriority: TaskPriority = .low
+    var reminderDate: Date? {
+        didSet {
+            guard let reminderDate = reminderDate else { return }
+            let dateFormatter = DateFormatter()
+            dateFormatter.calendar = Calendar.current
+            dateFormatter.dateFormat = "YYYY-MM-dd HH:mm ZZZ"
+            reminderDateString = dateFormatter.string(from: reminderDate)
+        }
+    }
+    private var reminderDateString: String?
     
     init(delegate: TodoEntryViewModelDelegate) {
         self.delegate = delegate
@@ -101,7 +111,12 @@ extension TodoEntryViewModel {
             self.delegate?.didCompleteOperation(.add)
         }
         
-        let todoItem = TodoItem(name: taskName, notes: taskNotes, priority: taskPriority, reminderDateTime: nil)
+        let todoItem = TodoItem(name: taskName,
+                                notes: taskNotes,
+                                priority: taskPriority,
+                                reminderDateTime: reminderDateString,
+                                deviceToken: AppSession.shared.deviceToken)
+        
         remoteDatabase.saveTodoItem(todoItem, to: .pending, execute: .operation(onCompletion))
         
     }
@@ -126,10 +141,4 @@ extension TodoEntryViewModel {
         delegate?.didCompleteOperation(.update)
     }
     
-}
-
-private extension TodoEntryViewModel {
-    func setDueDate(_ date: Date, for todoItem: TodoItem) {
-        
-    }
 }

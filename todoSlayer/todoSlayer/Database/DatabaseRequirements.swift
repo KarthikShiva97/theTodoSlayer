@@ -10,31 +10,13 @@ import Foundation
 import Firebase
 import FirebaseFirestore
 
-typealias DatabaseRequirements = TodoItemDetailViewDbAPI
+typealias DatabaseRequirements = ItemListViewService & ItemDetailViewService & DeviceTokenService & LoginService
 
-protocol TodoItemDetailViewDbAPI {
-    
-    func saveTodoItem(_ todoItem: TodoItem, to taskType: TaskType, execute: Execute)
-    
-    func deleteTodoItem(_ todoItem: TodoItem, atIndex index: Int, from taskType: TaskType,
-                        execute: Execute)
-    
-    func updateTodoItem(_ todoItem: TodoItem)
-    
-    func createListPosition(forDocumentID documentID: String, for taskType: TaskType, batch: WriteBatch)
-    
-    func updateTodoListPositions(positions: [String], positionChange: [String: Int]?,
-                                 taskType: TaskType)
-    
-    func clearLastPositionChanges()
+protocol ItemListViewService: class {
+    var todoItemListViewDelegate: ItemListViewServiceDelegate? { get set }
 }
 
-protocol TodoItemListViewDbAPI: class {
-    var todoItemListViewDelegate: TodoItemListViewDbDelegate? {get set}
-}
-
-protocol TodoItemListViewDbDelegate: class {
-    
+protocol ItemListViewServiceDelegate: class {
     func todoItemPositionDidChange(from sourceIndex: Int, to destinationIndex: Int,
                                    taskType: TaskType)
     
@@ -55,6 +37,27 @@ protocol TodoItemListViewDbDelegate: class {
                                     taskType: TaskType)
 }
 
-protocol DeviceTokenManager {
-    func storeDeviceToken(token: String, forPlatform platform: AppViewModel.Platform)
+protocol ItemDetailViewService {
+    func saveTodoItem(_ todoItem: TodoItem, to taskType: TaskType, execute: Execute)
+    
+    func deleteTodoItem(_ todoItem: TodoItem, atIndex index: Int, from taskType: TaskType,
+                        execute: Execute)
+    
+    func updateTodoItem(_ todoItem: TodoItem)
+    
+    func createListPosition(forDocumentID documentID: String, for taskType: TaskType, batch: WriteBatch)
+    
+    func updateTodoListPositions(positions: [String], positionChange: [String: Int]?,
+                                 taskType: TaskType)
+    
+    func clearLastPositionChanges()
+}
+
+protocol DeviceTokenService {
+    func storeDeviceToken(token: String, underUserID userID: String)
+}
+
+protocol LoginService {
+    func storeUser(_ userJSON: [String: Any], userID: String)
+    func doesUserExist(withID userID: String, onCompletion: @escaping (Bool)->())
 }

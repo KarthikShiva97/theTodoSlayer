@@ -286,7 +286,7 @@ extension TodoListViewModel {
 }
 
 // MARK:- Listener Delegate Methods
-extension TodoListViewModel: TodoItemListViewDbDelegate {
+extension TodoListViewModel: ItemListViewServiceDelegate {
 
     func todoItemPositionDidChange(from sourceIndex: Int, to destinationIndex: Int,
                                    taskType: TaskType) {

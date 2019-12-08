@@ -17,49 +17,49 @@ class FirebaseLayer {
         return instance
     }()
     
-    weak var todoItemListViewDelegate: TodoItemListViewDbDelegate?
+    weak var todoItemListViewDelegate: ItemListViewServiceDelegate?
     
     // MARK:- Paths
-    let pendingTasksPath = "list1/\(ListConstants.tasks)/\(ListConstants.TaskType.pending)"
-    let completedTasksPath = "list1/\(ListConstants.tasks)/\(ListConstants.TaskType.completed)"
+    let pendingTasksPath = "list1/\(Constants.tasks)/\(Constants.TaskType.pending)"
+    let completedTasksPath = "list1/\(Constants.tasks)/\(Constants.TaskType.completed)"
     
-    let pendingTasksMetaPath = "list1/\(ListConstants.meta)/\(ListConstants.TaskType.pending)/\(ListConstants.details)"
+    let pendingTasksMetaPath = "list1/\(Constants.meta)/\(Constants.TaskType.pending)/\(Constants.details)"
     
-    let completedTasksMetaPath = "list1/\(ListConstants.meta)/\(ListConstants.TaskType.completed)/\(ListConstants.details)"
+    let completedTasksMetaPath = "list1/\(Constants.meta)/\(Constants.TaskType.completed)/\(Constants.details)"
     
-    let deviceTokensPath = "\(ListConstants.deviceTokens)"
+    let deviceTokensPath = "\(Constants.deviceTokens)"
     
 }
 
 // MARK:- Constants Storage
 extension FirebaseLayer {
     
-    internal struct ListConstants {
-        static let tasks = "tasks"
-        static let meta = "meta"
-        static let details = "details"
-        static let deviceTokens = "deviceTokens"
+    enum Constants: String {
+        case tasks
+        case meta
+        case details
+        case deviceTokens
         
-        struct Meta {
-            static let lastOperation = "lastOperation"
-            static let lastOperationMeta = "lastOperationMeta"
-            static let positions = "positions"
+        enum Meta: String {
+            case lastOperation
+            case lastOperationMeta
+            case positions
             
-            struct LastOperationMeta {
-                static let lastRemovedIndex = "lastRemovedIndex"
-                static let fromIndex = "fromIndex"
-                static let toIndex = "toIndex"
+            enum LastOperationMeta: String {
+                case lastRemovedIndex
+                case fromIndex
+                case toIndex
             }
         }
         
-        struct TaskType {
-            static let pending = "pending"
-            static let completed = "completed"
+        enum TaskType: String {
+            case pending
+            case completed
         }
         
-        struct DeviceToken {
-            static let id = "id"
-            static let platform = "platform"
+        enum AppEntry: String {
+            case users
+            case deviceTokens 
         }
     } // ListConstants end ...
     
