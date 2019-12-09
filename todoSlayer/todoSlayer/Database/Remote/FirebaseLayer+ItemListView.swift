@@ -22,7 +22,7 @@ extension FirebaseLayer: ItemListViewService {
     
     func getTodoItemListPositions(for taskType: TaskType, onCompletion: @escaping (Result<[String], TodoItemListViewDbAPIError>)->()) {
         
-        let path = taskType == .pending ? pendingTasksMetaPath : completedTasksMetaPath
+        let path = taskType == .pending ? Path.pendingTasksMeta : Path.completedTasksMeta
         let fullPath = firebase.document(path)
         
         fullPath.getDocument { (snapshot, error) in
@@ -51,7 +51,7 @@ extension FirebaseLayer: ItemListViewService {
     
     func getAllTodoItems(for taskType: TaskType, onCompletion: @escaping (Result<[TodoItem], TodoItemListViewDbAPIError>)->()) {
         
-        let path = taskType == .pending ? pendingTasksPath : completedTasksPath
+        let path = taskType == .pending ? Path.pendingTasks : Path.completedTasks
         let fullPath = firebase.collection(path)
         
         fullPath.getDocuments { (snapshot, error) in
@@ -82,7 +82,7 @@ extension FirebaseLayer: ItemListViewService {
         
         todoItemListenerCount = 0
         
-        let path = taskType == .pending ? pendingTasksPath : completedTasksPath
+        let path = taskType == .pending ? Path.pendingTasks : Path.completedTasks
         let pathToListen = firebase.collection(path)
         
         allTodoItemsEventListener = pathToListen.addSnapshotListener { (snapshot, error) in
@@ -130,7 +130,7 @@ extension FirebaseLayer: ItemListViewService {
         
         positionsListenerCount = 0
         
-        let path = taskType == .pending ? pendingTasksMetaPath : completedTasksMetaPath
+        let path = taskType == .pending ? Path.pendingTasksMeta : Path.completedTasksMeta
         let pathToListen = firebase.document(path)
         
         todoItemListPositionEventListener = pathToListen.addSnapshotListener() { (snapshot, error) in
@@ -218,7 +218,7 @@ extension FirebaseLayer: ItemListViewService {
             positionData[Constants.Meta.lastOperation.rawValue] = ListOperation.sort.rawValue
         }
         
-        let path = taskType == .pending ? pendingTasksMetaPath : completedTasksMetaPath
+        let path = taskType == .pending ? Path.pendingTasksMeta : Path.completedTasksMeta
         let pathToUpdate = firebase.document(path)
         pathToUpdate.setData(positionData)
     }
@@ -234,7 +234,7 @@ extension FirebaseLayer: ItemListViewService {
     }
     
     func changeCompletionStatus(ForTodoItem todoItem: TodoItem, at taskType: TaskType, batch: WriteBatch) {
-        let path = taskType == .completed ? completedTasksPath : pendingTasksPath
+        let path = taskType == .completed ? Path.completedTasks : Path.pendingTasks
         let pathToUpdate = firebase.document(path + "/" + (todoItem.documentID))
         let updatedData = [TodoItem.Constants.isCompleted: todoItem.isCompleted]
         batch.updateData(updatedData, forDocument: pathToUpdate)
