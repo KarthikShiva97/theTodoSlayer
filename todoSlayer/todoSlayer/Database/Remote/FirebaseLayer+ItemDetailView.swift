@@ -45,7 +45,7 @@ extension FirebaseLayer: ItemDetailViewService {
             
         }
         
-        let taskPath = taskType == .pending ? pendingTasksPath : completedTasksPath
+        let taskPath = taskType == .pending ? Path.pendingTasks : Path.completedTasks
         let newTodoItemdocumentPath =  firebase.collection(taskPath).document()
         let documentID = newTodoItemdocumentPath.documentID
         
@@ -103,7 +103,7 @@ extension FirebaseLayer: ItemDetailViewService {
             
         }
         
-        let pathToDelete = taskType == .pending ? pendingTasksPath : completedTasksPath
+        let pathToDelete = taskType == .pending ? Path.pendingTasks : Path.completedTasks
         let todoItemPathRef = self.firebase.collection(pathToDelete).document(todoItem.documentID)
         
         
@@ -129,7 +129,7 @@ extension FirebaseLayer: ItemDetailViewService {
     
     
     func updateTodoItem(_ todoItem: TodoItem) {
-        let path = todoItem.taskType == .pending ? pendingTasksPath : completedTasksPath
+        let path = todoItem.taskType == .pending ? Path.pendingTasks : Path.completedTasks
         firebase.collection(path).document(todoItem.documentID).getDocument { (snapshot, error) in
             guard let snapshot = snapshot else { return }
             guard snapshot.exists else {
@@ -188,7 +188,7 @@ extension FirebaseLayer: ItemDetailViewService {
     
     
     private func getMetaPath(for taskType: TaskType) -> String {
-        return taskType == .pending ? pendingTasksMetaPath : completedTasksMetaPath
+        return taskType == .pending ? Path.pendingTasksMeta : Path.completedTasksMeta
     }
     
 } // extension ends ....

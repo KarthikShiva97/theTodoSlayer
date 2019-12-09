@@ -17,6 +17,7 @@
 		F0217B18239BA25F0077407A /* TestVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0217B17239BA25F0077407A /* TestVC.swift */; };
 		F0217B1A239D42740077407A /* HomeVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0217B19239D42740077407A /* HomeVC.swift */; };
 		F0217B1C239D47F20077407A /* HomeViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0217B1B239D47F20077407A /* HomeViewCell.swift */; };
+		F022509B239EAC6C008C3FE3 /* FirebaseLayer+HomeVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F022509A239EAC6C008C3FE3 /* FirebaseLayer+HomeVC.swift */; };
 		F03A05AD23080751003967E1 /* DateTimeVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03A05AC23080751003967E1 /* DateTimeVC.swift */; };
 		F03AB5F52284915300E37B2E /* TodoItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5F42284915300E37B2E /* TodoItem.swift */; };
 		F03AB5F72284954E00E37B2E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F03AB5F62284954E00E37B2E /* Extensions.swift */; };
@@ -60,6 +61,7 @@
 		F0217B17239BA25F0077407A /* TestVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestVC.swift; sourceTree = "<group>"; };
 		F0217B19239D42740077407A /* HomeVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeVC.swift; sourceTree = "<group>"; };
 		F0217B1B239D47F20077407A /* HomeViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewCell.swift; sourceTree = "<group>"; };
+		F022509A239EAC6C008C3FE3 /* FirebaseLayer+HomeVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FirebaseLayer+HomeVC.swift"; sourceTree = "<group>"; };
 		F03A05AC23080751003967E1 /* DateTimeVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DateTimeVC.swift; sourceTree = "<group>"; };
 		F03AB5F42284915300E37B2E /* TodoItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoItem.swift; sourceTree = "<group>"; };
 		F03AB5F62284954E00E37B2E /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
@@ -193,6 +195,7 @@
 				F08EA8C7228FC7AC0003698B /* FirebaseLayer+ItemListView.swift */,
 				F0860CF22376CC7100298AE5 /* FirebaseLayer+DeviceToken.swift */,
 				F0CF358A2393D3CF00BA51D0 /* FirebaseLayer+LoginScreen.swift */,
+				F022509A239EAC6C008C3FE3 /* FirebaseLayer+HomeVC.swift */,
 			);
 			path = Remote;
 			sourceTree = "<group>";
@@ -402,6 +405,7 @@
 				F09AC66522880675003DC091 /* DatabaseRequirements.swift in Sources */,
 				F060A5EC22A2F92E00B095B3 /* RoundedCheckBoxButton.swift in Sources */,
 				F002A09B227ECF9E0018B679 /* AppDelegate.swift in Sources */,
+				F022509B239EAC6C008C3FE3 /* FirebaseLayer+HomeVC.swift in Sources */,
 				F03AB5F72284954E00E37B2E /* Extensions.swift in Sources */,
 				F0F28A11238A9C700017EAFD /* RootViewController.swift in Sources */,
 				F0EC17C7229A5D6200CFFDA5 /* Logger.swift in Sources */,

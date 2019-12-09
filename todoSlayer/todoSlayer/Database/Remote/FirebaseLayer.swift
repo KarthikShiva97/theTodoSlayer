@@ -10,24 +10,27 @@ import Foundation
 import FirebaseFirestore
 
 class FirebaseLayer {
-    
     let firebase: Firestore = {
         let instance = Firestore.firestore()
-        //        instance.disableNetwork(completion: nil)
         return instance
     }()
     
     weak var todoItemListViewDelegate: ItemListViewServiceDelegate?
+}
+
+// MARK:- Paths
+extension FirebaseLayer {
     
-    // MARK:- Paths
-    let pendingTasksPath = "list1/\(Constants.tasks)/\(Constants.TaskType.pending)"
-    let completedTasksPath = "list1/\(Constants.tasks)/\(Constants.TaskType.completed)"
-    
-    let pendingTasksMetaPath = "list1/\(Constants.meta)/\(Constants.TaskType.pending)/\(Constants.details)"
-    
-    let completedTasksMetaPath = "list1/\(Constants.meta)/\(Constants.TaskType.completed)/\(Constants.details)"
-    
-    let deviceTokensPath = "\(Constants.deviceTokens)"
+    struct Path {
+        static let pendingTasks = "list1/\(Constants.tasks)/\(Constants.TaskType.pending)"
+        static let completedTasks = "list1/\(Constants.tasks)/\(Constants.TaskType.completed)"
+        
+        static let pendingTasksMeta = "list1/\(Constants.meta)/\(Constants.TaskType.pending)/\(Constants.details)"
+        
+        static let completedTasksMeta = "list1/\(Constants.meta)/\(Constants.TaskType.completed)/\(Constants.details)"
+        
+        static let deviceTokens = "\(Constants.deviceTokens)"
+    }
     
 }
 
